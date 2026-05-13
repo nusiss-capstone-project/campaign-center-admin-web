@@ -1,6 +1,8 @@
-/** Public API origin (no trailing slash), e.g. https://host */
+import { readPublicEnv } from "@/lib/read-env";
+
+/** Public API origin (no trailing slash), e.g. `https://host` */
 export function getPublicApiBaseUrl(): string {
-  return (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/$/, "");
+  return (readPublicEnv("NEXT_PUBLIC_API_BASE_URL") ?? "").replace(/\/$/, "");
 }
 
 /** Path must start with `/`, e.g. `/campaign-center-api/v1/admin/campaigns` */
