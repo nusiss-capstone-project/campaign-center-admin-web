@@ -1,6 +1,8 @@
+import { getPublicApiBaseUrl } from "@/lib/admin/campaign-admin-api";
+
 /** Origin only, no trailing slash — same contract as `getPublicApiBaseUrl`. */
 export function getCampaignCenterApiV1Base(): string {
-  const base = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/$/, "");
+  const base = getPublicApiBaseUrl();
   if (base) {
     return `${base}/campaign-center-api/v1`;
   }
