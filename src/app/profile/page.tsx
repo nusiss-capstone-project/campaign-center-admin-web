@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CalendarDays, CheckCircle2, Mail, User, XCircle } from "lucide-react";
+import { Bell, CheckCircle2, ChevronRight, Shield, User, XCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,7 +12,6 @@ import {
 import {
   apiErrorMessage,
   fetchUserProfile,
-  formatDate,
   type UserProfile,
 } from "@/lib/web/user-app-api";
 
@@ -59,21 +58,37 @@ export default function ProfilePage() {
           </p>
         ) : null}
 
-        <section className="rounded-[2rem] border border-white/10 bg-slate-950/60 p-6 shadow-2xl shadow-emerald-950/10">
+        <section className="rounded-[2rem] border border-white/10 bg-slate-950/60 p-6 shadow-2xl shadow-emerald-950/10 sm:p-8">
           {loading ? (
             <p className="text-sm text-slate-500">Loading profile…</p>
           ) : profile ? (
             <div className="flex flex-col gap-8">
               <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-5">
-                  <div className="flex size-20 items-center justify-center rounded-[1.75rem] bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20">
-                    <User className="size-10" aria-hidden />
+                <div className="flex items-center gap-6">
+                  <div className="flex size-28 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20">
+                    <User className="size-14" aria-hidden />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-semibold text-white">
+                    <h2 className="text-3xl font-semibold tracking-tight text-white">
                       {profile.username || "—"}
                     </h2>
-                    <p className="mt-1 text-slate-400">{profile.email || "—"}</p>
+                    <p className="mt-3 text-xl text-slate-400">
+                      {profile.email || "—"}
+                    </p>
+                    <p
+                      className={
+                        profile.kycChecked
+                          ? "mt-3 inline-flex items-center gap-2 text-base font-medium text-emerald-400"
+                          : "mt-3 inline-flex items-center gap-2 text-base font-medium text-amber-300"
+                      }
+                    >
+                      {profile.kycChecked ? (
+                        <CheckCircle2 className="size-5" aria-hidden />
+                      ) : (
+                        <XCircle className="size-5" aria-hidden />
+                      )}
+                      {profile.kycChecked ? "Verified" : "KYC Pending"}
+                    </p>
                   </div>
                 </div>
                 <Badge
@@ -87,64 +102,53 @@ export default function ProfilePage() {
                 </Badge>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <ProfileField
-                  icon={<User className="size-5" aria-hidden />}
-                  label="Username"
-                  value={profile.username || "—"}
-                />
-                <ProfileField
-                  icon={<Mail className="size-5" aria-hidden />}
-                  label="Email"
-                  value={profile.email || "—"}
-                />
-                <ProfileField
-                  icon={
-                    profile.kycChecked ? (
-                      <CheckCircle2 className="size-5" aria-hidden />
-                    ) : (
-                      <XCircle className="size-5" aria-hidden />
-                    )
-                  }
-                  label="KYC Status"
-                  value={profile.kycChecked ? "Checked" : "Not checked"}
-                />
-                <ProfileField
-                  icon={<CalendarDays className="size-5" aria-hidden />}
-                  label="Registered At"
-                  value={formatDate(profile.registeredAt)}
-                />
-              </div>
             </div>
           ) : (
             <p className="text-sm text-slate-500">No profile data.</p>
           )}
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-2">
+          <ProfileAction
+            icon={<Shield className="size-7" aria-hidden />}
+            title="Security Settings"
+          />
+          <ProfileAction
+            icon={<Bell className="size-7" aria-hidden />}
+            title="Notifications"
+            badge="3"
+          />
         </section>
       </div>
     </UserShell>
   );
 }
 
-function ProfileField({
+function ProfileAction({
   icon,
-  label,
-  value,
+  title,
+  badge,
 }: {
   icon: React.ReactNode;
-  label: string;
-  value: string;
+  title: string;
+  badge?: string;
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-3xl border border-white/10 bg-slate-950/50 p-5">
-      <span className="flex size-12 items-center justify-center rounded-2xl bg-slate-900 text-emerald-400 ring-1 ring-white/10">
+    <button
+      type="button"
+      className="group flex w-full items-center gap-5 rounded-[2rem] border border-white/10 bg-slate-950/50 p-6 text-left transition hover:border-white/15 hover:bg-white/[0.03]"
+      onClick={(e) => e.preventDefault()}
+    >
+      <span className="flex size-16 items-center justify-center rounded-3xl bg-slate-900 text-slate-400 ring-1 ring-white/10 group-hover:text-emerald-400">
         {icon}
       </span>
-      <div className="min-w-0">
-        <p className="text-sm text-slate-500">{label}</p>
-        <p className="mt-1 break-words text-lg font-semibold text-white">
-          {value}
-        </p>
-      </div>
-    </div>
+      <p className="min-w-0 flex-1 text-xl font-semibold text-white">{title}</p>
+      {badge ? (
+        <span className="flex size-8 items-center justify-center rounded-full bg-red-500 text-sm font-semibold text-white">
+          {badge}
+        </span>
+      ) : null}
+      <ChevronRight className="size-6 text-slate-500" aria-hidden />
+    </button>
   );
 }

@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
-import type { api_JoinCampaignReq } from "@/lib/api/models/api_JoinCampaignReq";
 import type { api_SimulateTopUpReq } from "@/lib/api/models/api_SimulateTopUpReq";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,31 +22,20 @@ const DEFAULT_TOP_UP_AMOUNT = 120;
 
 type CampaignUserActionsSectionProps = {
   campaignId: number;
-  defaultUserId?: string;
   onToast: (toast: CampaignToastState) => void;
 };
 
 export function CampaignUserActionsSection({
   campaignId,
-  defaultUserId = "",
   onToast,
 }: CampaignUserActionsSectionProps) {
-  const [userId, setUserId] = useState(defaultUserId);
   const [topUpAmount, setTopUpAmount] = useState(String(DEFAULT_TOP_UP_AMOUNT));
 
-  useEffect(() => {
-    setUserId(defaultUserId);
-  }, [defaultUserId]);
   const [joining, setJoining] = useState(false);
   const [toppingUp, setToppingUp] = useState(false);
   const [resultOpen, setResultOpen] = useState(false);
   const [resultTitle, setResultTitle] = useState("");
   const [resultDescription, setResultDescription] = useState("");
-
-  function parseUserId(): number | null {
-    const n = Number(userId.trim());
-    return Number.isFinite(n) && n > 0 ? n : null;
-  }
 
   function parseTopUpAmount(): number | null {
     const n = Number(topUpAmount.trim());
@@ -55,19 +43,9 @@ export function CampaignUserActionsSection({
   }
 
   async function handleJoin() {
-    const uid = parseUserId();
-    if (uid == null) {
-      onToast({
-        open: true,
-        variant: "error",
-        message: "Enter a valid numeric user ID.",
-      });
-      return;
-    }
     setJoining(true);
     try {
-      const body: api_JoinCampaignReq = { userId: uid };
-      const res = await postCampaignJoin(campaignId, body);
+      const res = await postCampaignJoin(campaignId);
       if (res.code != null && res.code !== 0) {
         onToast({
           open: true,
@@ -93,15 +71,6 @@ export function CampaignUserActionsSection({
   }
 
   async function handleTopUp() {
-    const uid = parseUserId();
-    if (uid == null) {
-      onToast({
-        open: true,
-        variant: "error",
-        message: "Enter a valid numeric user ID.",
-      });
-      return;
-    }
     const amount = parseTopUpAmount();
     if (amount == null) {
       onToast({
@@ -114,7 +83,6 @@ export function CampaignUserActionsSection({
     setToppingUp(true);
     try {
       const body: api_SimulateTopUpReq = {
-        userId: uid,
         amount,
       };
       const res = await postCampaignTopUp(campaignId, body);
@@ -143,20 +111,10 @@ export function CampaignUserActionsSection({
           Participate
         </h2>
         <p className="mt-1 text-sm text-slate-400">
-          Enter your user ID and optional top-up amount, then join the campaign or
-          run a simulated top-up (amount defaults to {DEFAULT_TOP_UP_AMOUNT}).
+          Join with your signed-in account or run a simulated top-up (amount
+          defaults to {DEFAULT_TOP_UP_AMOUNT}).
         </p>
         <div className="mt-6 flex max-w-md flex-col gap-4">
-          <label className="grid gap-2 text-sm">
-            <span className="font-medium text-slate-300">User ID</span>
-            <Input
-              inputMode="numeric"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              placeholder="e.g. 10001"
-              className="h-11 border-white/15 bg-slate-950/80 text-slate-100 placeholder:text-slate-600 focus-visible:ring-emerald-500/40"
-            />
-          </label>
           <label className="grid gap-2 text-sm">
             <span className="font-medium text-slate-300">Top-up amount</span>
             <Input

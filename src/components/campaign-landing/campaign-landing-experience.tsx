@@ -34,9 +34,6 @@ export function CampaignLandingExperience() {
     searchParams.get("lang")?.trim() ||
     searchParams.get("language")?.trim() ||
     undefined;
-  // Auth identity is supplied via Clerk Bearer token; do not read user id from URL.
-  const userIdForLanding = undefined;
-  const defaultUserIdField = "";
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +73,6 @@ export function CampaignLandingExperience() {
           "[campaigns/landing] GET",
           buildCampaignLandingPageUrl(campaignId, {
             lang,
-            userId: userIdForLanding,
           }),
         );
       }
@@ -84,7 +80,6 @@ export function CampaignLandingExperience() {
       try {
         const envelope = await fetchCampaignLandingPage(campaignId, {
           lang,
-          userId: userIdForLanding,
         });
         if (cancelled) return;
         if (envelope.code != null && envelope.code !== 0) {
@@ -107,7 +102,7 @@ export function CampaignLandingExperience() {
     return () => {
       cancelled = true;
     };
-  }, [campaignId, lang, userIdForLanding]);
+  }, [campaignId, lang]);
 
   if (!Number.isFinite(campaignId)) {
     return (
@@ -153,7 +148,6 @@ export function CampaignLandingExperience() {
             />
             <CampaignUserActionsSection
               campaignId={campaignId}
-              defaultUserId={defaultUserIdField}
               onToast={showToast}
             />
             <CampaignTermsSection terms={model.terms} />

@@ -173,6 +173,7 @@ export function normalizeWalletSummary(data: unknown): WalletSummary {
     campaignRewards: pickNum(o, [
       "campaignRewards",
       "campaignRewardAmount",
+      "totalCampaignRewardAmount",
       "totalCampaignRewards",
       "rewardAmount",
       "reward_amount",

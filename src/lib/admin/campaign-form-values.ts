@@ -1,5 +1,10 @@
 import { format, isValid, parseISO } from "date-fns";
 import type { api_RewardRulesReq } from "@/lib/api/models/api_RewardRulesReq";
+import {
+  CAMPAIGN_MARKET_OPTIONS,
+  REWARD_TYPE_OPTIONS,
+  USER_SEGMENT_OPTIONS,
+} from "@/lib/admin/campaign-options";
 
 export type CampaignFormValues = {
   name: string;
@@ -26,14 +31,14 @@ export function emptyCampaignFormValues(): CampaignFormValues {
   return {
     name: "",
     type: "TOPUP_REWARD",
-    targetMarket: "",
-    targetUserSegment: "",
+    targetMarket: CAMPAIGN_MARKET_OPTIONS[0].value,
+    targetUserSegment: USER_SEGMENT_OPTIONS[0].value,
     registrationStartTime: "",
     registrationEndTime: "",
     campaignStartTime: "",
     campaignEndTime: "",
     landingPageId: "",
-    rewardType: "TOPUP",
+    rewardType: REWARD_TYPE_OPTIONS[0].value,
     rewardMode: "FIXED_AMOUNT",
     rewardAmount: "0",
     rewardCurrency: "USD",

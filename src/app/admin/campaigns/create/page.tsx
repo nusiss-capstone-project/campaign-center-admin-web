@@ -29,6 +29,12 @@ import {
   parseCampaignDetailToFormValues,
   toRewardRulesPayload,
 } from "@/lib/admin/campaign-form-values";
+import {
+  CAMPAIGN_MARKET_OPTIONS,
+  CAMPAIGN_TYPE_OPTIONS,
+  REWARD_TYPE_OPTIONS,
+  USER_SEGMENT_OPTIONS,
+} from "@/lib/admin/campaign-options";
 
 function toIsoFromLocal(dtLocal: string): string {
   if (!dtLocal) return "";
@@ -47,14 +53,20 @@ function AdminCreateCampaignPageInner() {
 
   const [name, setName] = useState("");
   const [type, setType] = useState("TOPUP_REWARD");
-  const [targetMarket, setTargetMarket] = useState("");
-  const [targetUserSegment, setTargetUserSegment] = useState("");
+  const [targetMarket, setTargetMarket] = useState<string>(
+    CAMPAIGN_MARKET_OPTIONS[0].value,
+  );
+  const [targetUserSegment, setTargetUserSegment] = useState<string>(
+    USER_SEGMENT_OPTIONS[0].value,
+  );
   const [registrationStartTime, setRegistrationStartTime] = useState("");
   const [registrationEndTime, setRegistrationEndTime] = useState("");
   const [campaignStartTime, setCampaignStartTime] = useState("");
   const [campaignEndTime, setCampaignEndTime] = useState("");
   const [landingPageId, setLandingPageId] = useState("");
-  const [rewardType, setRewardType] = useState("TOPUP");
+  const [rewardType, setRewardType] = useState<string>(
+    REWARD_TYPE_OPTIONS[0].value,
+  );
   const [rewardMode, setRewardMode] = useState("FIXED_AMOUNT");
   const [rewardAmount, setRewardAmount] = useState("0");
   const [rewardCurrency, setRewardCurrency] = useState("USD");
@@ -218,27 +230,51 @@ function AdminCreateCampaignPageInner() {
             </label>
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted-foreground">Type</span>
-              <Input
-                value={type}
-                onChange={(ev) => setType(ev.target.value)}
-                required
-              />
+              <Select value={type} onValueChange={setType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select campaign type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CAMPAIGN_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted-foreground">Target market</span>
-              <Input
-                value={targetMarket}
-                onChange={(ev) => setTargetMarket(ev.target.value)}
-                required
-              />
+              <Select value={targetMarket} onValueChange={setTargetMarket}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select target market" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CAMPAIGN_MARKET_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted-foreground">Target user segment</span>
-              <Input
+              <Select
                 value={targetUserSegment}
-                onChange={(ev) => setTargetUserSegment(ev.target.value)}
-                required
-              />
+                onValueChange={setTargetUserSegment}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select user segment" />
+                </SelectTrigger>
+                <SelectContent>
+                  {USER_SEGMENT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted-foreground">Landing page ID (optional)</span>
@@ -292,11 +328,18 @@ function AdminCreateCampaignPageInner() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="grid gap-1.5 text-sm">
                   <span className="text-muted-foreground">Reward type</span>
-                  <Input
-                    value={rewardType}
-                    onChange={(ev) => setRewardType(ev.target.value)}
-                    required
-                  />
+                  <Select value={rewardType} onValueChange={setRewardType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select reward type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REWARD_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
                 <label className="grid gap-1.5 text-sm">
                   <span className="text-muted-foreground">Reward mode</span>
