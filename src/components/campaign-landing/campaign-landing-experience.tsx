@@ -36,7 +36,10 @@ export function CampaignLandingExperience() {
   const searchParams = useSearchParams();
   const campaignId = useMemo(() => parseId(params?.id), [params?.id]);
 
-  const language = searchParams.get("language")?.trim() || undefined;
+  const lang =
+    searchParams.get("lang")?.trim() ||
+    searchParams.get("language")?.trim() ||
+    undefined;
   const userIdForLanding = parseUserIdQuery(searchParams.get("userId"));
   const defaultUserIdField = searchParams.get("userId")?.trim() ?? "";
 
@@ -77,7 +80,7 @@ export function CampaignLandingExperience() {
         console.log(
           "[campaigns/landing] GET",
           buildCampaignLandingPageUrl(campaignId, {
-            language,
+            lang,
             userId: userIdForLanding,
           }),
         );
@@ -85,7 +88,7 @@ export function CampaignLandingExperience() {
 
       try {
         const envelope = await fetchCampaignLandingPage(campaignId, {
-          language,
+          lang,
           userId: userIdForLanding,
         });
         if (cancelled) return;
@@ -109,7 +112,7 @@ export function CampaignLandingExperience() {
     return () => {
       cancelled = true;
     };
-  }, [campaignId, language, userIdForLanding]);
+  }, [campaignId, lang, userIdForLanding]);
 
   if (!Number.isFinite(campaignId)) {
     return (

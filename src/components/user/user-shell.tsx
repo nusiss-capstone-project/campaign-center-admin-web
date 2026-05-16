@@ -20,17 +20,34 @@ export function useUserIdFromQuery(defaultUserId = 10001): number {
   return Number.isFinite(n) && n > 0 ? n : defaultUserId;
 }
 
-export function withUserId(href: string, userId: number): string {
-  const join = href.includes("?") ? "&" : "?";
-  return `${href}${join}userId=${userId}`;
+export function useLangFromQuery(): string | undefined {
+  const searchParams = useSearchParams();
+  return searchParams.get("lang")?.trim() || undefined;
+}
+
+export function withUserId(
+  href: string,
+  userId: number,
+  lang?: string,
+): string {
+  const [path, qs = ""] = href.split("?");
+  const params = new URLSearchParams(qs);
+  params.set("userId", String(userId));
+  if (lang?.trim()) {
+    params.set("lang", lang.trim());
+  }
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
 }
 
 export function UserShell({
   children,
   userId,
+  lang,
 }: {
   children: ReactNode;
   userId: number;
+  lang?: string;
 }) {
   const pathname = usePathname();
 
@@ -43,7 +60,7 @@ export function UserShell({
       <div className="relative mx-auto flex min-h-dvh w-full max-w-7xl flex-col px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-10">
         <header className="mb-8 flex items-center justify-between rounded-3xl border border-white/10 bg-slate-950/60 px-4 py-3 shadow-2xl shadow-emerald-950/10 backdrop-blur md:px-6">
           <Link
-            href={withUserId("/wallet", userId)}
+            href={withUserId("/wallet", userId, lang)}
             className="flex items-center gap-3"
           >
             <div className="flex size-10 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-400/25">
@@ -63,7 +80,7 @@ export function UserShell({
               return (
                 <Link
                   key={href}
-                  href={withUserId(href, userId)}
+                  href={withUserId(href, userId, lang)}
                   className={cn(
                     "flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-medium transition-colors",
                     active
@@ -89,7 +106,7 @@ export function UserShell({
             return (
               <Link
                 key={href}
-                href={withUserId(href, userId)}
+                href={withUserId(href, userId, lang)}
                 className={cn(
                   "flex flex-col items-center gap-1 rounded-2xl px-3 py-2 text-xs font-medium transition-colors",
                   active

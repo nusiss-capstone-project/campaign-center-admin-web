@@ -23,7 +23,7 @@ export default function AdminLandingPagesPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [languageFilter, setLanguageFilter] = useState("");
+  const [defaultLangFilter, setDefaultLangFilter] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<LandingPageStatusFilter>("all");
 
@@ -31,10 +31,10 @@ export default function AdminLandingPagesPage() {
     () => ({
       page: 1,
       pageSize: 10,
-      language: languageFilter.trim() || undefined,
+      defaultLang: defaultLangFilter.trim() || undefined,
       status: statusToQuery(statusFilter),
     }),
-    [languageFilter, statusFilter],
+    [defaultLangFilter, statusFilter],
   );
 
   useEffect(() => {
@@ -95,8 +95,8 @@ export default function AdminLandingPagesPage() {
       total={total}
       errorMessage={errorMessage}
       loading={loading}
-      languageFilter={languageFilter}
-      onLanguageFilterChange={setLanguageFilter}
+      languageFilter={defaultLangFilter}
+      onLanguageFilterChange={setDefaultLangFilter}
       statusFilter={statusFilter}
       onStatusFilterChange={setStatusFilter}
       onMutated={() => setRefreshKey((k) => k + 1)}

@@ -28,7 +28,7 @@ export default function AdminCreateLandingPagePage() {
   const [description, setDescription] = useState("");
   const [terms, setTerms] = useState("");
   const [bannerImageUrl, setBannerImageUrl] = useState("");
-  const [language, setLanguage] = useState("en-US");
+  const [defaultLang, setDefaultLang] = useState("en");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,14 +39,14 @@ export default function AdminCreateLandingPagePage() {
       description: description.trim(),
       terms: terms.trim(),
       bannerImageUrl: bannerImageUrl.trim(),
-      language: language.trim(),
+      defaultLang: defaultLang.trim(),
     };
     if (
       !body.title ||
       !body.description ||
       !body.terms ||
       !body.bannerImageUrl ||
-      !body.language
+      !body.defaultLang
     ) {
       setError("All fields are required.");
       setSubmitting(false);
@@ -91,10 +91,10 @@ export default function AdminCreateLandingPagePage() {
               />
             </label>
             <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">Language</span>
+              <span className="text-muted-foreground">Default Language</span>
               <Input
-                value={language}
-                onChange={(ev) => setLanguage(ev.target.value)}
+                value={defaultLang}
+                onChange={(ev) => setDefaultLang(ev.target.value)}
                 required
               />
             </label>

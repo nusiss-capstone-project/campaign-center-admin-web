@@ -8,15 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   UserShell,
+  useLangFromQuery,
   useUserIdFromQuery,
   withUserId,
 } from "@/components/user/user-shell";
 
 export default function ProfilePage() {
   const userId = useUserIdFromQuery();
+  const lang = useLangFromQuery();
 
   return (
-    <UserShell userId={userId}>
+    <UserShell userId={userId} lang={lang}>
       <div className="flex flex-col gap-8">
         <div>
           <h1 className="text-4xl font-semibold tracking-tight text-white">
@@ -69,7 +71,7 @@ export default function ProfilePage() {
             icon={<WalletCards className="size-6" aria-hidden />}
             title="Wallet"
             subtitle="View balance and recent transactions"
-            href={withUserId("/wallet", userId)}
+            href={withUserId("/wallet", userId, lang)}
           />
         </section>
 
@@ -79,7 +81,7 @@ export default function ProfilePage() {
             asChild
             className="rounded-full border-white/10 bg-slate-950/60"
           >
-            <Link href={withUserId("/campaigns", userId)}>
+            <Link href={withUserId("/campaigns", userId, lang)}>
               Browse campaigns
             </Link>
           </Button>

@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { TransactionStatusBadge } from "@/components/user/transaction-status-badge";
 import {
   UserShell,
+  useLangFromQuery,
   useUserIdFromQuery,
   withUserId,
 } from "@/components/user/user-shell";
@@ -33,6 +34,7 @@ import {
 
 export default function WalletPage() {
   const userId = useUserIdFromQuery();
+  const lang = useLangFromQuery();
   const [summary, setSummary] = useState<WalletSummary | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,7 +65,7 @@ export default function WalletPage() {
   }, [load]);
 
   return (
-    <UserShell userId={userId}>
+    <UserShell userId={userId} lang={lang}>
       <div className="grid gap-8 lg:grid-cols-[1.35fr_0.65fr]">
         <section className="flex flex-col gap-6">
           <div>
@@ -149,7 +151,7 @@ export default function WalletPage() {
               asChild
               className="h-13 flex-1 rounded-2xl border-white/10 bg-slate-950/60 text-base text-white hover:bg-white/5"
             >
-              <Link href={withUserId("/wallet/transactions", userId)}>
+              <Link href={withUserId("/wallet/transactions", userId, lang)}>
                 View Transactions
               </Link>
             </Button>
@@ -165,7 +167,7 @@ export default function WalletPage() {
               <p className="mt-1 text-sm text-slate-500">Latest wallet activity</p>
             </div>
             <Button variant="ghost" asChild className="text-emerald-400">
-              <Link href={withUserId("/wallet/transactions", userId)}>
+              <Link href={withUserId("/wallet/transactions", userId, lang)}>
                 View All
               </Link>
             </Button>

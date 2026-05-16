@@ -67,13 +67,13 @@ export function LandingPagesPageHeader({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
         <label className="grid min-w-[200px] flex-1 gap-1.5 text-sm sm:max-w-xs">
-          <span className="text-zinc-400">Language</span>
+          <span className="text-zinc-400">Default Language</span>
           <Input
             value={languageFilter}
             onChange={(e) => onLanguageFilterChange(e.target.value)}
-            placeholder="e.g. en-US"
+            placeholder="e.g. en"
             className="h-9 border-white/10 bg-zinc-900/80 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/20"
-            aria-label="Filter by language"
+            aria-label="Filter by default language"
           />
         </label>
         <label className="grid w-full gap-1.5 text-sm sm:w-48">

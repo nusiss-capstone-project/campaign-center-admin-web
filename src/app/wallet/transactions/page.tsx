@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionsTable } from "@/components/user/transactions-table";
 import {
   UserShell,
+  useLangFromQuery,
   useUserIdFromQuery,
   withUserId,
 } from "@/components/user/user-shell";
@@ -29,6 +30,7 @@ const PAGE_SIZE = 20;
 
 export default function WalletTransactionsPage() {
   const userId = useUserIdFromQuery();
+  const lang = useLangFromQuery();
   const [filter, setFilter] = useState<TxFilter>("all");
   const [rows, setRows] = useState<WalletTransaction[]>([]);
   const [cursorStack, setCursorStack] = useState<(number | undefined)[]>([
@@ -73,7 +75,7 @@ export default function WalletTransactionsPage() {
   }
 
   return (
-    <UserShell userId={userId}>
+    <UserShell userId={userId} lang={lang}>
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -82,7 +84,7 @@ export default function WalletTransactionsPage() {
               asChild
               className="mb-4 -ml-3 text-slate-400 hover:bg-white/5 hover:text-white"
             >
-              <Link href={withUserId("/wallet", userId)}>← Wallet</Link>
+              <Link href={withUserId("/wallet", userId, lang)}>← Wallet</Link>
             </Button>
             <h1 className="text-4xl font-semibold tracking-tight text-white">
               Wallet Transactions

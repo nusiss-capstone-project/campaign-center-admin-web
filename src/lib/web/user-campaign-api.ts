@@ -6,7 +6,7 @@ import { fetchJsonEnvelope } from "@/lib/admin/campaign-admin-fetch";
 
 export function buildCampaignLandingPageUrl(
   campaignId: number,
-  query?: { userId?: number; language?: string },
+  query?: { userId?: number; lang?: string },
 ): string {
   const base = buildPublicApiUrl(
     `/campaign-center-api/v1/web/campaigns/${campaignId}/landing-page`,
@@ -15,8 +15,8 @@ export function buildCampaignLandingPageUrl(
   if (query?.userId != null && Number.isFinite(query.userId)) {
     usp.set("userId", String(query.userId));
   }
-  if (query?.language?.trim()) {
-    usp.set("language", query.language.trim());
+  if (query?.lang?.trim()) {
+    usp.set("lang", query.lang.trim());
   }
   const qs = usp.toString();
   return qs ? `${base}?${qs}` : base;
@@ -24,7 +24,7 @@ export function buildCampaignLandingPageUrl(
 
 export async function fetchCampaignLandingPage(
   campaignId: number,
-  query?: { userId?: number; language?: string },
+  query?: { userId?: number; lang?: string },
 ): Promise<StandardEnvelope<unknown>> {
   const url = buildCampaignLandingPageUrl(campaignId, query);
   return fetchJsonEnvelope(url, { method: "GET" });

@@ -3,7 +3,7 @@ import { pickCampaignStatus } from "@/lib/admin/campaign-form-values";
 
 export type LandingPageFormValues = {
   title: string;
-  language: string;
+  defaultLang: string;
   bannerImageUrl: string;
   description: string;
   terms: string;
@@ -12,7 +12,7 @@ export type LandingPageFormValues = {
 export function emptyLandingPageFormValues(): LandingPageFormValues {
   return {
     title: "",
-    language: "en-US",
+    defaultLang: "en",
     bannerImageUrl: "",
     description: "",
     terms: "",
@@ -37,7 +37,9 @@ export function parseLandingPageDetailToFormValues(
 
   return {
     title: pickStr(o, "title") || base.title,
-    language: pickStr(o, "language") || base.language,
+    defaultLang:
+      pickStr(o, "defaultLang", "default_lang", "language", "lang") ||
+      base.defaultLang,
     bannerImageUrl: pickStr(
       o,
       "bannerImageUrl",
@@ -52,7 +54,7 @@ export function parseLandingPageDetailToFormValues(
 export function toLandingPageBody(v: LandingPageFormValues): api_LandingPageBody {
   return {
     title: v.title.trim(),
-    language: v.language.trim(),
+    defaultLang: v.defaultLang.trim(),
     bannerImageUrl: v.bannerImageUrl.trim(),
     description: v.description.trim(),
     terms: v.terms.trim(),
