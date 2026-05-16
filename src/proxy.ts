@@ -1,4 +1,8 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import {
+  clerkClient,
+  clerkMiddleware,
+  createRouteMatcher,
+} from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 // Next.js 16 renamed the middleware file convention to `proxy.ts`.
@@ -17,11 +21,18 @@ export default clerkMiddleware(async (auth, req) => {
   const authObject = await auth.protect();
 
   if (isAdminRoute(req)) {
-    const claims = authObject.sessionClaims as Record<string, unknown>;
+    const claims = authObject.sessionClaims as Record<string, unknown> | null;
     const metadata =
-      (claims.publicMetadata as Record<string, unknown> | undefined) ??
-      (claims.metadata as Record<string, unknown> | undefined);
-    const role = metadata?.role;
+      (claims?.publicMetadata as Record<string, unknown> | undefined) ??
+      (claims?.public_metadata as Record<string, unknown> | undefined) ??
+      (claims?.metadata as Record<string, unknown> | undefined);
+    let role = metadata?.role;
+
+    if (role == null && authObject.userId) {
+      const client = await clerkClient();
+      const user = await client.users.getUser(authObject.userId);
+      role = (user.publicMetadata as Record<string, unknown>).role;
+    }
 
     // Fail closed: admin UI is only available to users explicitly marked admin
     // in Clerk metadata. Backend RBAC must still enforce admin API access.
