@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import {
   UserShell,
   useLangFromQuery,
-  useUserIdFromQuery,
-  withUserId,
+  useDemoUserId,
+  withLangParam,
 } from "@/components/user/user-shell";
 import {
   apiErrorMessage,
@@ -19,7 +19,7 @@ import {
 } from "@/lib/web/user-app-api";
 
 export default function CampaignsPage() {
-  const userId = useUserIdFromQuery();
+  const userId = useDemoUserId();
   const lang = useLangFromQuery();
   const [campaigns, setCampaigns] = useState<UserCampaignCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +96,7 @@ export default function CampaignsPage() {
               {campaigns.map((campaign) => (
                 <Link
                   key={campaign.id}
-                  href={withUserId(`/campaigns/${campaign.id}`, userId, lang)}
+                  href={withLangParam(`/campaigns/${campaign.id}`, lang)}
                   className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900/95 via-slate-950 to-emerald-950/35 p-6 shadow-2xl shadow-emerald-950/10 transition hover:-translate-y-0.5 hover:border-emerald-400/30"
                 >
                   <div
@@ -158,7 +158,7 @@ export default function CampaignsPage() {
 
         <div className="flex justify-center">
           <Button asChild className="rounded-full bg-emerald-500 text-slate-950">
-            <Link href={withUserId("/wallet", userId, lang)}>Back to wallet</Link>
+            <Link href={withLangParam("/wallet", lang)}>Back to wallet</Link>
           </Button>
         </div>
       </div>

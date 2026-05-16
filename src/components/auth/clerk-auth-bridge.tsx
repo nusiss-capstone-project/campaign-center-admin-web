@@ -1,39 +1,56 @@
 "use client";
 
-import { useEffect } from "react";
+import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 
 import { OpenAPI } from "@/lib/api/core/OpenAPI";
+import { getCampaignCenterApiV1Base } from "@/lib/api/openapi-base-url";
+import { getPublicApiBaseUrl } from "@/lib/admin/campaign-admin-api";
 import {
+  isTrustedApiUrl,
   resetClerkTokenGetter,
   setClerkTokenGetter,
 } from "@/lib/auth/clerk-token";
 
-export function ClerkAuthBridge() {
+export function ClerkAuthBridge({ children }: { children: ReactNode }) {
   const { getToken, isLoaded, isSignedIn } = useAuth();
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    setReady(false);
+
     if (!isLoaded) {
       resetClerkTokenGetter();
       OpenAPI.TOKEN = undefined;
       return;
     }
 
+    OpenAPI.BASE = getCampaignCenterApiV1Base();
+    const apiBaseConfigured = getPublicApiBaseUrl() !== "";
+
     if (!isSignedIn) {
-      OpenAPI.TOKEN = undefined;
       setClerkTokenGetter(null);
+      OpenAPI.TOKEN = undefined;
+      setReady(true);
       return;
     }
 
     const getter = async () => (await getToken()) ?? "";
-    OpenAPI.TOKEN = getter;
+    const openApiTokenGetter = async () => {
+      if (!isTrustedApiUrl(OpenAPI.BASE)) return "";
+      return getter();
+    };
     setClerkTokenGetter(getter);
+    OpenAPI.TOKEN = apiBaseConfigured ? openApiTokenGetter : undefined;
+    setReady(true);
 
     return () => {
-      OpenAPI.TOKEN = undefined;
       setClerkTokenGetter(null);
+      OpenAPI.TOKEN = undefined;
     };
   }, [getToken, isLoaded, isSignedIn]);
 
-  return null;
+  if (!ready) return null;
+  return <>{children}</>;
 }

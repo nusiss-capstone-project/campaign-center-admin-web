@@ -46,7 +46,6 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ClerkProvider>
-          <ClerkAuthBridge />
           <script
             suppressHydrationWarning
             dangerouslySetInnerHTML={{
@@ -70,7 +69,7 @@ export default function RootLayout({
               <UserButton />
             </Show>
           </header>
-          {children}
+          <ClerkAuthBridge>{children}</ClerkAuthBridge>
         </ClerkProvider>
       </body>
     </html>

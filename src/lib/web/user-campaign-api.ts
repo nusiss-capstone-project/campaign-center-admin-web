@@ -38,7 +38,7 @@ async function postWebEnvelope<T>(
   const url = buildPublicApiUrl(path);
   const headers = new Headers();
   headers.set("Content-Type", "application/json");
-  await withClerkAuthorization(headers);
+  await withClerkAuthorization(url, headers);
   const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
   const json = (await res.json()) as StandardEnvelope<T>;
   if (!res.ok) {

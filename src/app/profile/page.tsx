@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/button";
 import {
   UserShell,
   useLangFromQuery,
-  useUserIdFromQuery,
-  withUserId,
+  useDemoUserId,
+  withLangParam,
 } from "@/components/user/user-shell";
 
 export default function ProfilePage() {
-  const userId = useUserIdFromQuery();
+  const userId = useDemoUserId();
   const lang = useLangFromQuery();
 
   return (
@@ -71,7 +71,7 @@ export default function ProfilePage() {
             icon={<WalletCards className="size-6" aria-hidden />}
             title="Wallet"
             subtitle="View balance and recent transactions"
-            href={withUserId("/wallet", userId, lang)}
+            href={withLangParam("/wallet", lang)}
           />
         </section>
 
@@ -81,7 +81,7 @@ export default function ProfilePage() {
             asChild
             className="rounded-full border-white/10 bg-slate-950/60"
           >
-            <Link href={withUserId("/campaigns", userId, lang)}>
+            <Link href={withLangParam("/campaigns", lang)}>
               Browse campaigns
             </Link>
           </Button>

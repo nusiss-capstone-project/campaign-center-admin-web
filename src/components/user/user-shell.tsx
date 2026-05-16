@@ -14,7 +14,7 @@ const NAV = [
   { href: "/profile", label: "Profile", icon: User },
 ] as const;
 
-export function useUserIdFromQuery(defaultUserId = 10001): number {
+export function useDemoUserId(defaultUserId = 10001): number {
   const raw = process.env.NEXT_PUBLIC_DEMO_USER_ID;
   const n = raw == null ? NaN : Number(raw);
   return Number.isFinite(n) && n > 0 ? n : defaultUserId;
@@ -25,11 +25,7 @@ export function useLangFromQuery(): string | undefined {
   return searchParams.get("lang")?.trim() || undefined;
 }
 
-export function withUserId(
-  href: string,
-  _userId: number,
-  lang?: string,
-): string {
+export function withLangParam(href: string, lang?: string): string {
   const [path, qs = ""] = href.split("?");
   const params = new URLSearchParams(qs);
   if (lang?.trim()) {
@@ -62,7 +58,7 @@ export function UserShell({
       <div className="relative mx-auto flex min-h-dvh w-full max-w-7xl flex-col px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-10">
         <header className="mb-8 flex items-center justify-between rounded-3xl border border-white/10 bg-slate-950/60 px-4 py-3 shadow-2xl shadow-emerald-950/10 backdrop-blur md:px-6">
           <Link
-            href={withUserId("/wallet", userId, lang)}
+            href={withLangParam("/wallet", lang)}
             className="flex items-center gap-3"
           >
             <div className="flex size-10 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-400/25">
@@ -84,7 +80,7 @@ export function UserShell({
               return (
                 <Link
                   key={href}
-                  href={withUserId(href, userId, lang)}
+                  href={withLangParam(href, lang)}
                   className={cn(
                     "flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-medium transition-colors",
                     active
@@ -110,7 +106,7 @@ export function UserShell({
             return (
               <Link
                 key={href}
-                href={withUserId(href, userId, lang)}
+                href={withLangParam(href, lang)}
                 className={cn(
                   "flex flex-col items-center gap-1 rounded-2xl px-3 py-2 text-xs font-medium transition-colors",
                   active

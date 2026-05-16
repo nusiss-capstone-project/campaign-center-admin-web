@@ -11,7 +11,7 @@ export async function fetchJsonEnvelope<T = unknown>(
   if (init?.body != null && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  await withClerkAuthorization(headers);
+  await withClerkAuthorization(url, headers);
   const res = await fetch(url, { ...init, headers });
   if (!res.ok) {
     throw new Error(`${res.status} ${res.statusText}`);

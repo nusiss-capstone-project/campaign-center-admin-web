@@ -1,6 +1,8 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+// Next.js 16 renamed the middleware file convention to `proxy.ts`.
+// `next build` reports this entrypoint as "Proxy (Middleware)".
 const isProtectedRoute = createRouteMatcher([
   "/admin(.*)",
   "/wallet(.*)",
@@ -21,9 +23,9 @@ export default clerkMiddleware(async (auth, req) => {
       (claims.metadata as Record<string, unknown> | undefined);
     const role = metadata?.role;
 
-    // If Clerk metadata is not configured yet, keep frontend authorization minimal
-    // and let the backend enforce admin permissions.
-    if (role != null && role !== "admin") {
+    // Fail closed: admin UI is only available to users explicitly marked admin
+    // in Clerk metadata. Backend RBAC must still enforce admin API access.
+    if (role !== "admin") {
       return NextResponse.redirect(new URL("/wallet", req.url));
     }
   }

@@ -9,8 +9,8 @@ import { TransactionsTable } from "@/components/user/transactions-table";
 import {
   UserShell,
   useLangFromQuery,
-  useUserIdFromQuery,
-  withUserId,
+  useDemoUserId,
+  withLangParam,
 } from "@/components/user/user-shell";
 import {
   apiErrorMessage,
@@ -29,7 +29,7 @@ const FILTERS: { value: TxFilter; label: string }[] = [
 const PAGE_SIZE = 20;
 
 export default function WalletTransactionsPage() {
-  const userId = useUserIdFromQuery();
+  const userId = useDemoUserId();
   const lang = useLangFromQuery();
   const [filter, setFilter] = useState<TxFilter>("all");
   const [rows, setRows] = useState<WalletTransaction[]>([]);
@@ -84,7 +84,7 @@ export default function WalletTransactionsPage() {
               asChild
               className="mb-4 -ml-3 text-slate-400 hover:bg-white/5 hover:text-white"
             >
-              <Link href={withUserId("/wallet", userId, lang)}>← Wallet</Link>
+              <Link href={withLangParam("/wallet", lang)}>← Wallet</Link>
             </Button>
             <h1 className="text-4xl font-semibold tracking-tight text-white">
               Wallet Transactions

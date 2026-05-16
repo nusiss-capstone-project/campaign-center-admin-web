@@ -148,12 +148,11 @@ export default function AdminLandingPageEditPage() {
         );
         if (cancelled) return;
         if (detail) {
+          const parsed = parseLandingPageDetailToFormValues(detail);
           setValues({
-            ...parseLandingPageDetailToFormValues(detail),
+            ...parsed,
             defaultLang,
-            bannerImageUrl:
-              parseLandingPageDetailToFormValues(detail).bannerImageUrl ||
-              defaultValues.bannerImageUrl,
+            bannerImageUrl: parsed.bannerImageUrl || defaultValues.bannerImageUrl,
           });
           if (!translatedLangs.includes(selectedLang)) {
             setNotice(
