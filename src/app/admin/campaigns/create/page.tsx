@@ -128,36 +128,43 @@ function AdminCreateCampaignPageInner() {
     setError(null);
     setSubmitting(true);
     const landingIdTrim = landingPageId.trim();
-    const body: api_CreateCampaignReq = {
-      name: name.trim(),
-      type: type.trim(),
-      targetMarket: targetMarket.trim(),
-      targetUserSegment: targetUserSegment.trim(),
-      registrationStartTime: toIsoFromLocal(registrationStartTime),
-      registrationEndTime: toIsoFromLocal(registrationEndTime),
-      campaignStartTime: toIsoFromLocal(campaignStartTime),
-      campaignEndTime: toIsoFromLocal(campaignEndTime),
-      rewardRules: toRewardRulesPayload({
-        name,
-        type,
-        targetMarket,
-        targetUserSegment,
-        registrationStartTime,
-        registrationEndTime,
-        campaignStartTime,
-        campaignEndTime,
-        landingPageId,
-        rewardType,
-        rewardMode,
-        rewardAmount,
-        rewardCurrency,
-        rewardPercentage,
-        maxRewardAmount,
-        topupThreshold,
-        maxClaimPerUser,
-        minObtainDays,
-      }),
-    };
+    let body: api_CreateCampaignReq;
+    try {
+      body = {
+        name: name.trim(),
+        type: type.trim(),
+        targetMarket: targetMarket.trim(),
+        targetUserSegment: targetUserSegment.trim(),
+        registrationStartTime: toIsoFromLocal(registrationStartTime),
+        registrationEndTime: toIsoFromLocal(registrationEndTime),
+        campaignStartTime: toIsoFromLocal(campaignStartTime),
+        campaignEndTime: toIsoFromLocal(campaignEndTime),
+        rewardRules: toRewardRulesPayload({
+          name,
+          type,
+          targetMarket,
+          targetUserSegment,
+          registrationStartTime,
+          registrationEndTime,
+          campaignStartTime,
+          campaignEndTime,
+          landingPageId,
+          rewardType,
+          rewardMode,
+          rewardAmount,
+          rewardCurrency,
+          rewardPercentage,
+          maxRewardAmount,
+          topupThreshold,
+          maxClaimPerUser,
+          minObtainDays,
+        }),
+      };
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid reward rules.");
+      setSubmitting(false);
+      return;
+    }
     if (landingIdTrim !== "") {
       const n = Number(landingIdTrim);
       if (!Number.isNaN(n)) body.landingPageId = n;

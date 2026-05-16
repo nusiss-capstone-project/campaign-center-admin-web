@@ -237,10 +237,10 @@ export function normalizeTransactions(data: unknown): WalletTransactionsResult {
 }
 
 export async function fetchWalletSummary(
-  userId: number,
+  _userId: number,
   currency = DEFAULT_WEB_CURRENCY,
 ): Promise<WalletSummary> {
-  const body = await UserAccountService.getWebAccountSummary(userId, currency);
+  const body = await UserAccountService.getWebAccountSummary(currency);
   return normalizeWalletSummary(unwrap<unknown>(body));
 }
 
@@ -251,7 +251,6 @@ export async function fetchWalletTransactions(params: {
   limit?: number;
 }): Promise<WalletTransactionsResult> {
   const body = await UserAccountService.getWebAccountTransactions(
-    params.userId,
     params.type,
     params.cursor,
     params.limit,

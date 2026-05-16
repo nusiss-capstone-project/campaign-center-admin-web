@@ -166,14 +166,27 @@ export function localDatetimeToIso(dtLocal: string): string {
   return Number.isNaN(d.getTime()) ? "" : d.toISOString();
 }
 
-function numberOrUndefined(raw: string): number | undefined {
-  if (raw.trim() === "") return undefined;
+function parseNumberField(raw: string, label: string): number {
+  if (raw.trim() === "") {
+    throw new Error(`${label} is required.`);
+  }
   const n = Number(raw);
-  return Number.isFinite(n) ? n : undefined;
+  if (!Number.isFinite(n)) {
+    throw new Error(`${label} must be a valid number.`);
+  }
+  return n;
 }
 
-function numberOrZero(raw: string): number {
-  return numberOrUndefined(raw) ?? 0;
+function parseOptionalNumberField(
+  raw: string,
+  label: string,
+): number | undefined {
+  if (raw.trim() === "") return undefined;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) {
+    throw new Error(`${label} must be a valid number.`);
+  }
+  return n;
 }
 
 export function toRewardRulesPayload(
@@ -183,19 +196,32 @@ export function toRewardRulesPayload(
   const payload: api_RewardRulesReq = {
     rewardType: values.rewardType.trim(),
     rewardMode,
-    topupThreshold: numberOrZero(values.topupThreshold),
-    maxClaimPerUser: Math.trunc(numberOrZero(values.maxClaimPerUser)),
-    minObtainDays: Math.trunc(numberOrZero(values.minObtainDays)),
+    topupThreshold: parseNumberField(values.topupThreshold, "Top-up threshold"),
+    maxClaimPerUser: Math.trunc(
+      parseNumberField(values.maxClaimPerUser, "Max claim per user"),
+    ),
+    minObtainDays: Math.trunc(
+      parseNumberField(values.minObtainDays, "Min obtain days"),
+    ),
   };
 
   if (rewardMode === "PERCENTAGE") {
-    payload.rewardPercentage = numberOrZero(values.rewardPercentage);
-    const maxRewardAmount = numberOrUndefined(values.maxRewardAmount);
+    payload.rewardPercentage = parseNumberField(
+      values.rewardPercentage,
+      "Reward percentage",
+    );
+    const maxRewardAmount = parseOptionalNumberField(
+      values.maxRewardAmount,
+      "Max reward amount",
+    );
     if (maxRewardAmount != null) payload.maxRewardAmount = maxRewardAmount;
     const rewardCurrency = values.rewardCurrency.trim();
     if (rewardCurrency) payload.rewardCurrency = rewardCurrency;
   } else {
-    payload.rewardAmount = numberOrZero(values.rewardAmount);
+    payload.rewardAmount = parseNumberField(
+      values.rewardAmount,
+      "Reward amount",
+    );
     const rewardCurrency = values.rewardCurrency.trim();
     if (rewardCurrency) payload.rewardCurrency = rewardCurrency;
   }

@@ -2,7 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type api_JoinCampaignReq = {
-    userId: number;
+export type api_UserProfileData = {
+    email?: string;
+    kycChecked?: boolean;
+    registeredAt?: string;
+    username?: string;
 };
 

@@ -13,5 +13,6 @@ export type api_UpdateCampaignReq = {
     rewardRules: api_RewardRulesReq;
     targetMarket: string;
     targetUserSegment: string;
+    type: string;
 };
 

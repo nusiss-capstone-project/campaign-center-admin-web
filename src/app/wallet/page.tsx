@@ -113,6 +113,7 @@ export default function WalletPage() {
                   aria-label={
                     balanceVisible ? "Hide account balance" : "Show account balance"
                   }
+                  aria-pressed={balanceVisible}
                 >
                   {balanceVisible ? (
                     <EyeOff className="size-5" aria-hidden />

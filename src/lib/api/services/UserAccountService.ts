@@ -9,20 +9,17 @@ import { request as __request } from '../core/request';
 export class UserAccountService {
     /**
      * Get account summary (user)
-     * @param userId User ID
      * @param currency Currency (default USDT)
      * @returns data_StandardResponse success
      * @throws ApiError
      */
     public static getWebAccountSummary(
-        userId: number,
         currency?: string,
     ): CancelablePromise<data_StandardResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/web/account/summary',
             query: {
-                'userId': userId,
                 'currency': currency,
             },
             errors: {
@@ -33,7 +30,6 @@ export class UserAccountService {
     }
     /**
      * List account transactions (user)
-     * @param userId User ID
      * @param type Transaction type RECHARGE or CAMPAIGN_REWARD
      * @param cursor Pagination cursor (transaction id)
      * @param limit Page size (default 20, max 100)
@@ -41,7 +37,6 @@ export class UserAccountService {
      * @throws ApiError
      */
     public static getWebAccountTransactions(
-        userId: number,
         type?: string,
         cursor?: number,
         limit?: number,
@@ -50,7 +45,6 @@ export class UserAccountService {
             method: 'GET',
             url: '/web/account/transactions',
             query: {
-                'userId': userId,
                 'type': type,
                 'cursor': cursor,
                 'limit': limit,

@@ -5,10 +5,10 @@
 export type api_RewardRulesReq = {
     maxClaimPerUser: number;
     maxRewardAmount?: number;
-    minObtainDays: number;
+    minObtainDays?: number;
     rewardAmount?: number;
     rewardCurrency?: string;
-    rewardMode: string;
+    rewardMode?: string;
     rewardPercentage?: number;
     rewardType: string;
     topupThreshold: number;

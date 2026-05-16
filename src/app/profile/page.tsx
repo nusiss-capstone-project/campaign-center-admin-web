@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { Bell, CheckCircle2, ChevronRight, Shield, User, XCircle } from "lucide-react";
 
@@ -129,7 +130,7 @@ function ProfileAction({
   title,
   badge,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   badge?: string;
 }) {

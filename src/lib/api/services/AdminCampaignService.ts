@@ -106,6 +106,32 @@ export class AdminCampaignService {
         });
     }
     /**
+     * Archive campaign (admin)
+     * @param campaignId Campaign ID
+     * @param body Operator
+     * @returns data_StandardResponse success
+     * @throws ApiError
+     */
+    public static postAdminCampaignsArchive(
+        campaignId: number,
+        body: api_PublishOperatorReq,
+    ): CancelablePromise<data_StandardResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/admin/campaigns/{campaignId}/archive',
+            path: {
+                'campaignId': campaignId,
+            },
+            body: body,
+            errors: {
+                400: `bad request`,
+                404: `not found`,
+                409: `not eligible or already archived`,
+                503: `database unavailable`,
+            },
+        });
+    }
+    /**
      * Publish campaign (admin)
      * @param campaignId Campaign ID
      * @param body Operator
