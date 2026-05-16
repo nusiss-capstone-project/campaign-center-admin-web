@@ -12,6 +12,9 @@ declare global {
     env: {
       NODE_ENV?: string;
       NEXT_PUBLIC_API_BASE_URL?: string;
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?: string;
+      NEXT_PUBLIC_CLIENT?: string;
+      NEXT_PUBLIC_DEMO_USER_ID?: string;
       VERCEL?: string;
       VERCEL_ENV?: string;
     };

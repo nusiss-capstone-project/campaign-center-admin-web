@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
+import { useUser } from "@clerk/nextjs";
 import { Trophy, User, Wallet } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -14,8 +15,7 @@ const NAV = [
 ] as const;
 
 export function useUserIdFromQuery(defaultUserId = 10001): number {
-  const searchParams = useSearchParams();
-  const raw = searchParams.get("userId");
+  const raw = process.env.NEXT_PUBLIC_DEMO_USER_ID;
   const n = raw == null ? NaN : Number(raw);
   return Number.isFinite(n) && n > 0 ? n : defaultUserId;
 }
@@ -27,12 +27,11 @@ export function useLangFromQuery(): string | undefined {
 
 export function withUserId(
   href: string,
-  userId: number,
+  _userId: number,
   lang?: string,
 ): string {
   const [path, qs = ""] = href.split("?");
   const params = new URLSearchParams(qs);
-  params.set("userId", String(userId));
   if (lang?.trim()) {
     params.set("lang", lang.trim());
   }
@@ -50,6 +49,9 @@ export function UserShell({
   lang?: string;
 }) {
   const pathname = usePathname();
+  const { user } = useUser();
+  const displayName =
+    user?.firstName || user?.username || user?.primaryEmailAddress?.emailAddress;
 
   return (
     <div className="relative min-h-dvh bg-[#030712] text-slate-100">
@@ -70,7 +72,9 @@ export function UserShell({
               <p className="text-sm font-semibold text-white">
                 Growth Rewards
               </p>
-              <p className="text-xs text-slate-500">User #{userId}</p>
+              <p className="text-xs text-slate-500">
+                {displayName ?? `Demo user #${userId}`}
+              </p>
             </div>
           </Link>
           <nav className="hidden items-center gap-1 md:flex">

@@ -3,6 +3,7 @@ import type { api_SimulateTopUpReq } from "@/lib/api/models/api_SimulateTopUpReq
 import type { StandardEnvelope } from "@/lib/admin/campaign-admin-api";
 import { buildPublicApiUrl } from "@/lib/admin/campaign-admin-api";
 import { fetchJsonEnvelope } from "@/lib/admin/campaign-admin-fetch";
+import { withClerkAuthorization } from "@/lib/auth/clerk-token";
 
 export function buildCampaignLandingPageUrl(
   campaignId: number,
@@ -37,6 +38,7 @@ async function postWebEnvelope<T>(
   const url = buildPublicApiUrl(path);
   const headers = new Headers();
   headers.set("Content-Type", "application/json");
+  await withClerkAuthorization(headers);
   const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
   const json = (await res.json()) as StandardEnvelope<T>;
   if (!res.ok) {

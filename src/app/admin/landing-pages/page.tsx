@@ -10,6 +10,7 @@ import {
   buildLandingPagesListUrl,
   type LandingPagesListResponse,
 } from "@/lib/admin/landing-pages-fetch";
+import { fetchWithClerkAuthorization } from "@/lib/auth/clerk-token";
 import { isNonProductionRuntime } from "@/lib/is-non-production-runtime";
 
 function statusToQuery(status: LandingPageStatusFilter): number | undefined {
@@ -50,7 +51,7 @@ export default function AdminLandingPagesPage() {
       }
 
       try {
-        const res = await fetch(url);
+        const res = await fetchWithClerkAuthorization(url);
         if (!res.ok) {
           throw new Error(`${res.status} ${res.statusText}`);
         }

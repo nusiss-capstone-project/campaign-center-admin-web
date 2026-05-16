@@ -6,6 +6,7 @@ import { CampaignsDashboard } from "@/components/admin/campaigns-dashboard";
 import type { CampaignDisplayRow } from "@/lib/admin/campaign-row";
 import { normalizeCampaignRows } from "@/lib/admin/campaign-row";
 import { buildPublicApiUrl } from "@/lib/admin/campaign-admin-api";
+import { fetchWithClerkAuthorization } from "@/lib/auth/clerk-token";
 import { isNonProductionRuntime } from "@/lib/is-non-production-runtime";
 
 type CampaignsApiResponse = {
@@ -42,7 +43,7 @@ export default function AdminCampaignsPage() {
       }
 
       try {
-        const res = await fetch(url);
+        const res = await fetchWithClerkAuthorization(url);
         if (!res.ok) {
           throw new Error(`${res.status} ${res.statusText}`);
         }

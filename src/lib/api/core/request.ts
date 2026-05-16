@@ -8,6 +8,7 @@ import type { ApiResult } from './ApiResult';
 import { CancelablePromise } from './CancelablePromise';
 import type { OnCancel } from './CancelablePromise';
 import type { OpenAPIConfig } from './OpenAPI';
+import { withClerkAuthorization } from '../../auth/clerk-token';
 
 export const isDefined = <T>(value: T | null | undefined): value is Exclude<T, null | undefined> => {
     return value !== undefined && value !== null;
@@ -176,7 +177,7 @@ export const getHeaders = async (config: OpenAPIConfig, options: ApiRequestOptio
         }
     }
 
-    return new Headers(headers);
+    return withClerkAuthorization(new Headers(headers));
 };
 
 export const getRequestBody = (options: ApiRequestOptions): any => {
