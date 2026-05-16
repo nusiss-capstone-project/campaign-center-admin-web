@@ -1,5 +1,8 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+<!-- Optional: replace OWNER/REPO if you want a public CI badge. -->
+<!-- [![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml) -->
+
 ## Getting Started
 
 First, run the development server:
@@ -34,3 +37,36 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## CI Pipeline
+
+This project includes a lightweight GitHub Actions workflow at `.github/workflows/ci.yml`.
+
+It runs on:
+
+- Pull requests
+- Pushes to `main`
+- Pushes to `develop`
+
+CI stages:
+
+- **Install dependencies**: uses `npm ci` for clean, reproducible installs and GitHub's npm cache.
+- **ESLint**: runs `npm run lint` and fails on lint errors.
+- **TypeScript**: runs `npm run typecheck` and fails on type errors.
+- **Next.js build**: runs `npm run build` to catch production build issues.
+- **Security audit**: runs `npm run audit:high` and fails only for high/critical npm advisories.
+
+Recommended local checks before opening a PR:
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+npm run audit:high
+```
+
+Or run the combined local quality gate:
+
+```bash
+npm run ci:check
+```

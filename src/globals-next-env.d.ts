@@ -7,7 +7,6 @@ declare global {
   }
 
   /** Next inlines `env.NEXT_PUBLIC_*` at build time; minimal shape for app code + `tsc`. */
-  // eslint-disable-next-line no-var -- global augmentation
   var process: {
     env: {
       NODE_ENV?: string;

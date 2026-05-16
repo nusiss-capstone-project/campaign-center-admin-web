@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { CampaignParticipationsTab } from "@/components/admin/campaign-performance/campaign-participations-tab";
 import { CampaignPerformanceTab } from "@/components/admin/campaign-performance/campaign-performance-tab";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type PerformanceTab = "performance" | "participations";
 

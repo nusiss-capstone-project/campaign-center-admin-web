@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowDownCircle, History, Wallet as WalletIcon, Zap } from "lucide-react";
+import { ArrowDownCircle, Wallet as WalletIcon, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
