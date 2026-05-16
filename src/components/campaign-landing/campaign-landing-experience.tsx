@@ -25,20 +25,18 @@ function parseId(raw: string | string[] | undefined): number {
   return Number.isFinite(n) && n > 0 ? n : NaN;
 }
 
-function parseUserIdQuery(raw: string | null): number | undefined {
-  if (raw == null || raw === "") return undefined;
-  const n = Number(raw);
-  return Number.isFinite(n) && n > 0 ? n : undefined;
-}
-
 export function CampaignLandingExperience() {
   const params = useParams();
   const searchParams = useSearchParams();
   const campaignId = useMemo(() => parseId(params?.id), [params?.id]);
 
-  const language = searchParams.get("language")?.trim() || undefined;
-  const userIdForLanding = parseUserIdQuery(searchParams.get("userId"));
-  const defaultUserIdField = searchParams.get("userId")?.trim() ?? "";
+  const lang =
+    searchParams.get("lang")?.trim() ||
+    searchParams.get("language")?.trim() ||
+    undefined;
+  // Auth identity is supplied via Clerk Bearer token; do not read user id from URL.
+  const userIdForLanding = undefined;
+  const defaultUserIdField = "";
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +75,7 @@ export function CampaignLandingExperience() {
         console.log(
           "[campaigns/landing] GET",
           buildCampaignLandingPageUrl(campaignId, {
-            language,
+            lang,
             userId: userIdForLanding,
           }),
         );
@@ -85,7 +83,7 @@ export function CampaignLandingExperience() {
 
       try {
         const envelope = await fetchCampaignLandingPage(campaignId, {
-          language,
+          lang,
           userId: userIdForLanding,
         });
         if (cancelled) return;
@@ -109,7 +107,7 @@ export function CampaignLandingExperience() {
     return () => {
       cancelled = true;
     };
-  }, [campaignId, language, userIdForLanding]);
+  }, [campaignId, lang, userIdForLanding]);
 
   if (!Number.isFinite(campaignId)) {
     return (

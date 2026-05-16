@@ -5,6 +5,7 @@ export type LandingPageStatusCategory = "draft" | "published" | "archive";
 
 export type LandingPageDisplayRow = {
   id: number;
+  /** Displayed default_lang/defaultLang value. Kept as `language` for table compatibility. */
   language: string;
   title: string;
   statusCategory: LandingPageStatusCategory;
@@ -64,7 +65,13 @@ export function normalizeLandingPageRow(
   const title =
     typeof row.title === "string" ? row.title : `Landing page ${index + 1}`;
   const language =
-    typeof row.language === "string" ? row.language : "—";
+    typeof row.defaultLang === "string"
+      ? row.defaultLang
+      : typeof row.default_lang === "string"
+        ? row.default_lang
+        : typeof row.language === "string"
+          ? row.language
+          : "—";
   const statusCategory = parseStatus(row.status);
   const createdRaw =
     row.createdAt ??

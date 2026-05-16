@@ -7,11 +7,13 @@ declare global {
   }
 
   /** Next inlines `env.NEXT_PUBLIC_*` at build time; minimal shape for app code + `tsc`. */
-  // eslint-disable-next-line no-var -- global augmentation
   var process: {
     env: {
       NODE_ENV?: string;
       NEXT_PUBLIC_API_BASE_URL?: string;
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?: string;
+      NEXT_PUBLIC_CLIENT?: string;
+      NEXT_PUBLIC_DEMO_USER_ID?: string;
       VERCEL?: string;
       VERCEL_ENV?: string;
     };

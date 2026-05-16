@@ -9,6 +9,8 @@ type LandingDetailsFormProps = {
   readOnly: boolean;
   onChange?: (next: LandingPageFormValues) => void;
   statusLabel?: string | null;
+  defaultLangReadOnly?: boolean;
+  bannerReadOnly?: boolean;
 };
 
 function patch(
@@ -23,6 +25,8 @@ export function LandingDetailsForm({
   readOnly,
   onChange,
   statusLabel,
+  defaultLangReadOnly = false,
+  bannerReadOnly = false,
 }: LandingDetailsFormProps) {
   const ro = readOnly;
   const set = (p: Partial<LandingPageFormValues>) => {
@@ -51,12 +55,12 @@ export function LandingDetailsForm({
         />
       </label>
       <label className="grid gap-1.5 text-sm">
-        <span className="text-zinc-400">Language</span>
+        <span className="text-zinc-400">Default Language</span>
         <Input
-          value={values.language}
-          onChange={(e) => set({ language: e.target.value })}
-          disabled={ro}
-          readOnly={ro}
+          value={values.defaultLang}
+          onChange={(e) => set({ defaultLang: e.target.value })}
+          disabled={ro || defaultLangReadOnly}
+          readOnly={ro || defaultLangReadOnly}
           required={!ro}
           className={fieldClass}
         />
@@ -66,8 +70,8 @@ export function LandingDetailsForm({
         <Input
           value={values.bannerImageUrl}
           onChange={(e) => set({ bannerImageUrl: e.target.value })}
-          disabled={ro}
-          readOnly={ro}
+          disabled={ro || bannerReadOnly}
+          readOnly={ro || bannerReadOnly}
           required={!ro}
           className={fieldClass}
         />

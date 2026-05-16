@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Eye, MoreHorizontal, Send } from "lucide-react";
+import { BarChart3, Eye, MoreHorizontal, Send } from "lucide-react";
 
 import type { CampaignDisplayRow } from "@/lib/admin/campaign-row";
 import { canArchiveCampaign } from "@/lib/admin/campaign-row";
@@ -149,6 +149,19 @@ export function CampaignsDataTable({
                       asChild
                     >
                       <Link
+                        href={`/admin/campaigns/${row.id}/performance`}
+                        aria-label={`Performance for ${row.name}`}
+                      >
+                        <BarChart3 className="size-4" strokeWidth={1.75} />
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-zinc-400 hover:bg-white/5 hover:text-white"
+                      asChild
+                    >
+                      <Link
                         href={`/admin/campaigns/${row.id}`}
                         aria-label={`View ${row.name}`}
                       >
@@ -200,6 +213,13 @@ export function CampaignsDataTable({
                           onClick={() => setMenuOpenId(null)}
                         >
                           View Details
+                        </Link>
+                        <Link
+                          href={`/admin/campaigns/${row.id}/performance`}
+                          className="block rounded-md px-3 py-2 text-sm text-white hover:bg-white/10"
+                          onClick={() => setMenuOpenId(null)}
+                        >
+                          Performance
                         </Link>
                         {canEdit ? (
                           <Link

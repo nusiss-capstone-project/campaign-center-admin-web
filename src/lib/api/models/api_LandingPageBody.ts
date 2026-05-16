@@ -4,8 +4,8 @@
 /* eslint-disable */
 export type api_LandingPageBody = {
     bannerImageUrl: string;
+    defaultLang: string;
     description: string;
-    language: string;
     terms: string;
     title: string;
 };

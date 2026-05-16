@@ -80,11 +80,22 @@ export default function AdminCampaignDetailPage() {
         <Button variant="outline" asChild className="border-white/10 bg-zinc-900/50">
           <Link href="/admin/campaigns">← Campaigns</Link>
         </Button>
-        {canEdit ? (
-          <Button asChild className="border-0 bg-white text-black hover:bg-zinc-200">
-            <Link href={`/admin/campaigns/${campaignId}/edit`}>Edit</Link>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            asChild
+            className="border-white/10 bg-zinc-900/50"
+          >
+            <Link href={`/admin/campaigns/${campaignId}/performance`}>
+              Performance
+            </Link>
           </Button>
-        ) : null}
+          {canEdit ? (
+            <Button asChild className="border-0 bg-white text-black hover:bg-zinc-200">
+              <Link href={`/admin/campaigns/${campaignId}/edit`}>Edit</Link>
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <Card className="border-white/10 bg-zinc-900/40 text-zinc-100 ring-white/10">

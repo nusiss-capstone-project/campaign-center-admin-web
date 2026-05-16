@@ -7,9 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "audit:high": "npm audit --audit-level=high",
+    "ci:check": "npm run lint && npm run typecheck && npm run build",
     "gen:api": "openapi --input https://campaign-center-api-dev.up.railway.app/campaign-center-api/v1/swagger/doc.json --output src/lib/api --client fetch"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.3.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

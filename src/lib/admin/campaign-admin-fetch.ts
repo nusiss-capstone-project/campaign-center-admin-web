@@ -1,6 +1,7 @@
 import type { api_UpdateCampaignReq } from "@/lib/api/models/api_UpdateCampaignReq";
 import type { StandardEnvelope } from "@/lib/admin/campaign-admin-api";
 import { buildPublicApiUrl } from "@/lib/admin/campaign-admin-api";
+import { withClerkAuthorization } from "@/lib/auth/clerk-token";
 
 export async function fetchJsonEnvelope<T = unknown>(
   url: string,
@@ -10,6 +11,7 @@ export async function fetchJsonEnvelope<T = unknown>(
   if (init?.body != null && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
+  await withClerkAuthorization(url, headers);
   const res = await fetch(url, { ...init, headers });
   if (!res.ok) {
     throw new Error(`${res.status} ${res.statusText}`);

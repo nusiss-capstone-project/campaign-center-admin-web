@@ -37,14 +37,14 @@ export class UserCampaignService {
      * Get campaign landing page (user)
      * @param campaignId Campaign ID
      * @param userId User ID for participation status
-     * @param language Must match landing page language when set
+     * @param lang Preferred language; falls back to default
      * @returns data_StandardResponse success
      * @throws ApiError
      */
     public static getWebCampaignsLandingPage(
         campaignId: number,
         userId?: number,
-        language?: string,
+        lang?: string,
     ): CancelablePromise<data_StandardResponse> {
         return __request(OpenAPI, {
             method: 'GET',
@@ -54,7 +54,7 @@ export class UserCampaignService {
             },
             query: {
                 'userId': userId,
-                'language': language,
+                'lang': lang,
             },
             errors: {
                 404: `not found`,
@@ -63,7 +63,7 @@ export class UserCampaignService {
         });
     }
     /**
-     * Simulate top-up (user)
+     * Simulate top-up with account recharge (user)
      * @param campaignId Campaign ID
      * @param body User and amount
      * @returns data_StandardResponse success, manual review, or business error code

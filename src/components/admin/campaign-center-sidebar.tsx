@@ -23,8 +23,14 @@ const NAV = [
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
 
+function campaignIdFromPath(pathname: string): string | null {
+  const m = pathname.match(/^\/admin\/campaigns\/(\d+)(?:\/|$)/);
+  return m?.[1] ?? null;
+}
+
 export function CampaignCenterSidebar() {
   const pathname = usePathname();
+  const campaignId = campaignIdFromPath(pathname);
 
   return (
     <aside className="flex w-[260px] shrink-0 flex-col border-r border-white/10 bg-black">
@@ -46,19 +52,52 @@ export function CampaignCenterSidebar() {
               ? pathname === "/admin"
               : pathname === href || pathname.startsWith(`${href}/`);
           return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                active
-                  ? "bg-zinc-900 text-white"
-                  : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-100",
-              )}
-            >
-              <Icon className="size-4 shrink-0 opacity-80" strokeWidth={1.75} />
-              {label}
-            </Link>
+            <div key={href} className="flex flex-col gap-0.5">
+              <Link
+                href={href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-zinc-900 text-white"
+                    : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-100",
+                )}
+              >
+                <Icon
+                  className="size-4 shrink-0 opacity-80"
+                  strokeWidth={1.75}
+                />
+                {label}
+              </Link>
+              {href === "/admin/campaigns" && campaignId ? (
+                <div className="ml-4 flex flex-col gap-0.5 border-l border-white/10 py-1 pl-3">
+                  <Link
+                    href={`/admin/campaigns/${campaignId}`}
+                    className={cn(
+                      "rounded-md px-2.5 py-2 text-xs font-medium transition-colors",
+                      pathname === `/admin/campaigns/${campaignId}` ||
+                        pathname === `/admin/campaigns/${campaignId}/edit`
+                        ? "bg-zinc-800 text-white"
+                        : "text-zinc-500 hover:bg-zinc-900/60 hover:text-zinc-200",
+                    )}
+                  >
+                    Details
+                  </Link>
+                  <Link
+                    href={`/admin/campaigns/${campaignId}/performance`}
+                    className={cn(
+                      "rounded-md px-2.5 py-2 text-xs font-medium transition-colors",
+                      pathname.startsWith(
+                        `/admin/campaigns/${campaignId}/performance`,
+                      )
+                        ? "bg-zinc-800 text-white"
+                        : "text-zinc-500 hover:bg-zinc-900/60 hover:text-zinc-200",
+                    )}
+                  >
+                    Performance
+                  </Link>
+                </div>
+              ) : null}
+            </div>
           );
         })}
       </nav>

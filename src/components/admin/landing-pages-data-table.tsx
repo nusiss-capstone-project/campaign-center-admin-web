@@ -60,7 +60,7 @@ export function LandingPagesDataTable({
               ID
             </TableHead>
             <TableHead className="h-11 border-0 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-              Language
+              Default Language
             </TableHead>
             <TableHead className="h-11 border-0 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
               Title
