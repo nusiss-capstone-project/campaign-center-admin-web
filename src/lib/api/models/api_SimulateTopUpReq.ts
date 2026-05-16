@@ -4,6 +4,5 @@
 /* eslint-disable */
 export type api_SimulateTopUpReq = {
     amount: number;
-    userId: number;
 };
 

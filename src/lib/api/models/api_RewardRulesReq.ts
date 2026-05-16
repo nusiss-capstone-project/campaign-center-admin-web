@@ -4,7 +4,12 @@
 /* eslint-disable */
 export type api_RewardRulesReq = {
     maxClaimPerUser: number;
-    rewardAmount: number;
+    maxRewardAmount?: number;
+    minObtainDays?: number;
+    rewardAmount?: number;
+    rewardCurrency?: string;
+    rewardMode?: string;
+    rewardPercentage?: number;
     rewardType: string;
     topupThreshold: number;
 };

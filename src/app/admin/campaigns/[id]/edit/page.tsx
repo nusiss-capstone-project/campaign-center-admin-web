@@ -26,24 +26,21 @@ import {
   parseCampaignDetailToFormValues,
   pickCampaignStatus,
   statusCodeToLabel,
+  toRewardRulesPayload,
 } from "@/lib/admin/campaign-form-values";
 
 function toUpdatePayload(v: CampaignFormValues): api_UpdateCampaignReq {
   const landingTrim = v.landingPageId.trim();
   const body: api_UpdateCampaignReq = {
     name: v.name.trim(),
+    type: v.type.trim(),
     targetMarket: v.targetMarket.trim(),
     targetUserSegment: v.targetUserSegment.trim(),
     registrationStartTime: localDatetimeToIso(v.registrationStartTime),
     registrationEndTime: localDatetimeToIso(v.registrationEndTime),
     campaignStartTime: localDatetimeToIso(v.campaignStartTime),
     campaignEndTime: localDatetimeToIso(v.campaignEndTime),
-    rewardRules: {
-      rewardType: v.rewardType.trim(),
-      rewardAmount: Number(v.rewardAmount),
-      topupThreshold: Number(v.topupThreshold),
-      maxClaimPerUser: Number(v.maxClaimPerUser),
-    },
+    rewardRules: toRewardRulesPayload(v),
   };
   if (landingTrim !== "") {
     const n = Number(landingTrim);
@@ -122,7 +119,14 @@ export default function AdminCampaignEditPage() {
     if (!canSubmit) return;
     setError(null);
     setSaving(true);
-    const payload = toUpdatePayload(values);
+    let payload: api_UpdateCampaignReq;
+    try {
+      payload = toUpdatePayload(values);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid reward rules.");
+      setSaving(false);
+      return;
+    }
     if (
       !payload.name ||
       !payload.targetMarket ||

@@ -110,6 +110,13 @@ function pickRewardType(rr: Record<string, unknown> | null): string {
   return "";
 }
 
+function pickRewardMode(rr: Record<string, unknown> | null): string {
+  if (!rr) return "";
+  const v = rr.rewardMode ?? rr.reward_mode;
+  if (typeof v === "string") return v.trim().toUpperCase();
+  return "";
+}
+
 function humanizeAudience(raw: string): string {
   const s = raw.trim();
   if (!s) return "";
@@ -162,13 +169,20 @@ export function buildCampaignLandingViewModel(
   if (!Number.isFinite(rewardNum)) {
     rewardNum = pickNum(campaign, ["rewardAmount", "reward_amount"]);
   }
+  const rewardPercentage = pickNum(rr, [
+    "rewardPercentage",
+    "reward_percentage",
+  ]);
+  const maxRewardAmount = pickNum(rr, ["maxRewardAmount", "max_reward_amount"]);
 
   const maxClaimPerUser = pickNum(rr, [
     "maxClaimPerUser",
     "max_claim_per_user",
   ]);
 
-  const cur = pickStr(campaign, ["currency", "rewardCurrency"]);
+  const cur =
+    pickStr(rr, ["rewardCurrency", "reward_currency"]) ||
+    pickStr(campaign, ["currency", "rewardCurrency"]);
   const currency = /^[A-Z]{3}$/i.test(cur) ? cur.toUpperCase() : "USD";
 
   const minTopUpLabel = Number.isFinite(topNum)
@@ -178,11 +192,21 @@ export function buildCampaignLandingViewModel(
   const rewardType =
     pickRewardType(rr) ||
     pickStr(campaign, ["rewardType", "reward_type"]).toUpperCase();
-  const rewardAmountLabel = Number.isFinite(rewardNum)
-    ? rewardType === "FIXED"
-      ? `${formatMoney(rewardNum, currency)} bonus`
-      : formatMoney(rewardNum, currency)
-    : "-";
+  const rewardMode = pickRewardMode(rr);
+  const rewardAmountLabel =
+    rewardMode === "PERCENTAGE"
+      ? Number.isFinite(rewardPercentage)
+        ? `${rewardPercentage}% bonus${
+            Number.isFinite(maxRewardAmount)
+              ? `, up to ${formatMoney(maxRewardAmount, currency)}`
+              : ""
+          }`
+        : "-"
+      : Number.isFinite(rewardNum)
+        ? rewardType === "FIXED" || rewardMode === "FIXED_AMOUNT"
+          ? `${formatMoney(rewardNum, currency)} bonus`
+          : formatMoney(rewardNum, currency)
+        : "-";
 
   const segmentRaw = pickStr(campaign, [
     "targetUserSegment",

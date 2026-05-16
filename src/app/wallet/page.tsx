@@ -3,7 +3,13 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowDownCircle, Wallet as WalletIcon, Zap } from "lucide-react";
+import {
+  ArrowDownCircle,
+  Eye,
+  EyeOff,
+  Wallet as WalletIcon,
+  Zap,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +46,7 @@ export default function WalletPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rechargeOpen, setRechargeOpen] = useState(false);
+  const [balanceVisible, setBalanceVisible] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -92,25 +99,46 @@ export default function WalletPage() {
               aria-hidden
             />
             <div className="relative">
-              <div className="flex items-center gap-4 text-slate-300">
-                <span className="flex size-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/25">
-                  <WalletIcon className="size-7" aria-hidden />
-                </span>
-                <p className="text-lg font-medium">Available Balance</p>
+              <div className="flex items-center justify-between gap-4 text-slate-300">
+                <div className="flex items-center gap-4">
+                  <span className="flex size-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/25">
+                    <WalletIcon className="size-7" aria-hidden />
+                  </span>
+                  <p className="text-lg font-medium">Available Balance</p>
+                </div>
+                <button
+                  type="button"
+                  className="flex size-10 items-center justify-center rounded-full border border-white/10 bg-slate-950/40 text-slate-400 transition hover:bg-white/5 hover:text-white"
+                  onClick={() => setBalanceVisible((visible) => !visible)}
+                  aria-label={
+                    balanceVisible ? "Hide account balance" : "Show account balance"
+                  }
+                  aria-pressed={balanceVisible}
+                >
+                  {balanceVisible ? (
+                    <EyeOff className="size-5" aria-hidden />
+                  ) : (
+                    <Eye className="size-5" aria-hidden />
+                  )}
+                </button>
               </div>
 
               <div className="mt-8 flex items-end gap-3">
                 <p className="text-5xl font-semibold tracking-tight text-white sm:text-6xl">
                   {loading || !summary
                     ? "—"
-                    : summary.availableBalance.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                    : balanceVisible
+                      ? summary.availableBalance.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })
+                      : "******"}
                 </p>
-                <p className="pb-2 text-xl font-semibold text-slate-400">
-                  {summary?.currency ?? DEFAULT_WEB_CURRENCY}
-                </p>
+                {balanceVisible ? (
+                  <p className="pb-2 text-xl font-semibold text-slate-400">
+                    {summary?.currency ?? DEFAULT_WEB_CURRENCY}
+                  </p>
+                ) : null}
               </div>
 
               <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -118,18 +146,22 @@ export default function WalletPage() {
                   icon={<Zap className="size-5" aria-hidden />}
                   label="Campaign Rewards"
                   value={
-                    summary
+                    summary && balanceVisible
                       ? formatMoney(summary.campaignRewards, summary.currency)
-                      : "—"
+                      : balanceVisible
+                        ? "—"
+                        : "****"
                   }
                 />
                 <MiniMetric
                   icon={<ArrowDownCircle className="size-5" aria-hidden />}
                   label="Total Recharged"
                   value={
-                    summary
+                    summary && balanceVisible
                       ? formatMoney(summary.totalRecharged, summary.currency)
-                      : "—"
+                      : balanceVisible
+                        ? "—"
+                        : "****"
                   }
                 />
               </div>

@@ -17,8 +17,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { fetchCampaignDetail } from "@/lib/admin/campaign-admin-fetch";
-import { parseCampaignDetailToFormValues } from "@/lib/admin/campaign-form-values";
+import {
+  parseCampaignDetailToFormValues,
+  toRewardRulesPayload,
+} from "@/lib/admin/campaign-form-values";
+import {
+  CAMPAIGN_MARKET_OPTIONS,
+  CAMPAIGN_TYPE_OPTIONS,
+  REWARD_TYPE_OPTIONS,
+  USER_SEGMENT_OPTIONS,
+} from "@/lib/admin/campaign-options";
 
 function toIsoFromLocal(dtLocal: string): string {
   if (!dtLocal) return "";
@@ -37,17 +53,28 @@ function AdminCreateCampaignPageInner() {
 
   const [name, setName] = useState("");
   const [type, setType] = useState("TOPUP_REWARD");
-  const [targetMarket, setTargetMarket] = useState("");
-  const [targetUserSegment, setTargetUserSegment] = useState("");
+  const [targetMarket, setTargetMarket] = useState<string>(
+    CAMPAIGN_MARKET_OPTIONS[0].value,
+  );
+  const [targetUserSegment, setTargetUserSegment] = useState<string>(
+    USER_SEGMENT_OPTIONS[0].value,
+  );
   const [registrationStartTime, setRegistrationStartTime] = useState("");
   const [registrationEndTime, setRegistrationEndTime] = useState("");
   const [campaignStartTime, setCampaignStartTime] = useState("");
   const [campaignEndTime, setCampaignEndTime] = useState("");
   const [landingPageId, setLandingPageId] = useState("");
-  const [rewardType, setRewardType] = useState("FIXED");
+  const [rewardType, setRewardType] = useState<string>(
+    REWARD_TYPE_OPTIONS[0].value,
+  );
+  const [rewardMode, setRewardMode] = useState("FIXED_AMOUNT");
   const [rewardAmount, setRewardAmount] = useState("0");
+  const [rewardCurrency, setRewardCurrency] = useState("USD");
+  const [rewardPercentage, setRewardPercentage] = useState("0");
+  const [maxRewardAmount, setMaxRewardAmount] = useState("0");
   const [topupThreshold, setTopupThreshold] = useState("0");
   const [maxClaimPerUser, setMaxClaimPerUser] = useState("1");
+  const [minObtainDays, setMinObtainDays] = useState("0");
 
   useEffect(() => {
     if (!duplicateFrom) return;
@@ -73,9 +100,14 @@ function AdminCreateCampaignPageInner() {
         setCampaignEndTime(v.campaignEndTime);
         setLandingPageId(v.landingPageId);
         setRewardType(v.rewardType);
+        setRewardMode(v.rewardMode);
         setRewardAmount(v.rewardAmount);
+        setRewardCurrency(v.rewardCurrency);
+        setRewardPercentage(v.rewardPercentage);
+        setMaxRewardAmount(v.maxRewardAmount);
         setTopupThreshold(v.topupThreshold);
         setMaxClaimPerUser(v.maxClaimPerUser);
+        setMinObtainDays(v.minObtainDays);
       } catch (e) {
         if (cancelled) return;
         setError(
@@ -96,22 +128,43 @@ function AdminCreateCampaignPageInner() {
     setError(null);
     setSubmitting(true);
     const landingIdTrim = landingPageId.trim();
-    const body: api_CreateCampaignReq = {
-      name: name.trim(),
-      type: type.trim(),
-      targetMarket: targetMarket.trim(),
-      targetUserSegment: targetUserSegment.trim(),
-      registrationStartTime: toIsoFromLocal(registrationStartTime),
-      registrationEndTime: toIsoFromLocal(registrationEndTime),
-      campaignStartTime: toIsoFromLocal(campaignStartTime),
-      campaignEndTime: toIsoFromLocal(campaignEndTime),
-      rewardRules: {
-        rewardType: rewardType.trim(),
-        rewardAmount: Number(rewardAmount),
-        topupThreshold: Number(topupThreshold),
-        maxClaimPerUser: Number(maxClaimPerUser),
-      },
-    };
+    let body: api_CreateCampaignReq;
+    try {
+      body = {
+        name: name.trim(),
+        type: type.trim(),
+        targetMarket: targetMarket.trim(),
+        targetUserSegment: targetUserSegment.trim(),
+        registrationStartTime: toIsoFromLocal(registrationStartTime),
+        registrationEndTime: toIsoFromLocal(registrationEndTime),
+        campaignStartTime: toIsoFromLocal(campaignStartTime),
+        campaignEndTime: toIsoFromLocal(campaignEndTime),
+        rewardRules: toRewardRulesPayload({
+          name,
+          type,
+          targetMarket,
+          targetUserSegment,
+          registrationStartTime,
+          registrationEndTime,
+          campaignStartTime,
+          campaignEndTime,
+          landingPageId,
+          rewardType,
+          rewardMode,
+          rewardAmount,
+          rewardCurrency,
+          rewardPercentage,
+          maxRewardAmount,
+          topupThreshold,
+          maxClaimPerUser,
+          minObtainDays,
+        }),
+      };
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid reward rules.");
+      setSubmitting(false);
+      return;
+    }
     if (landingIdTrim !== "") {
       const n = Number(landingIdTrim);
       if (!Number.isNaN(n)) body.landingPageId = n;
@@ -184,27 +237,51 @@ function AdminCreateCampaignPageInner() {
             </label>
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted-foreground">Type</span>
-              <Input
-                value={type}
-                onChange={(ev) => setType(ev.target.value)}
-                required
-              />
+              <Select value={type} onValueChange={setType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select campaign type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CAMPAIGN_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted-foreground">Target market</span>
-              <Input
-                value={targetMarket}
-                onChange={(ev) => setTargetMarket(ev.target.value)}
-                required
-              />
+              <Select value={targetMarket} onValueChange={setTargetMarket}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select target market" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CAMPAIGN_MARKET_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted-foreground">Target user segment</span>
-              <Input
+              <Select
                 value={targetUserSegment}
-                onChange={(ev) => setTargetUserSegment(ev.target.value)}
-                required
-              />
+                onValueChange={setTargetUserSegment}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select user segment" />
+                </SelectTrigger>
+                <SelectContent>
+                  {USER_SEGMENT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted-foreground">Landing page ID (optional)</span>
@@ -258,22 +335,77 @@ function AdminCreateCampaignPageInner() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="grid gap-1.5 text-sm">
                   <span className="text-muted-foreground">Reward type</span>
-                  <Input
-                    value={rewardType}
-                    onChange={(ev) => setRewardType(ev.target.value)}
-                    required
-                  />
+                  <Select value={rewardType} onValueChange={setRewardType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select reward type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REWARD_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
                 <label className="grid gap-1.5 text-sm">
-                  <span className="text-muted-foreground">Reward amount</span>
+                  <span className="text-muted-foreground">Reward mode</span>
+                  <Select value={rewardMode} onValueChange={setRewardMode}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select reward mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FIXED_AMOUNT">Fixed amount</SelectItem>
+                      <SelectItem value="PERCENTAGE">Percentage</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </label>
+                <label className="grid gap-1.5 text-sm">
+                  <span className="text-muted-foreground">Reward currency</span>
                   <Input
-                    type="number"
-                    step="any"
-                    value={rewardAmount}
-                    onChange={(ev) => setRewardAmount(ev.target.value)}
-                    required
+                    value={rewardCurrency}
+                    onChange={(ev) => setRewardCurrency(ev.target.value)}
+                    placeholder="USD"
                   />
                 </label>
+                {rewardMode === "PERCENTAGE" ? (
+                  <>
+                    <label className="grid gap-1.5 text-sm">
+                      <span className="text-muted-foreground">
+                        Reward percentage
+                      </span>
+                      <Input
+                        type="number"
+                        step="any"
+                        value={rewardPercentage}
+                        onChange={(ev) => setRewardPercentage(ev.target.value)}
+                        required
+                      />
+                    </label>
+                    <label className="grid gap-1.5 text-sm">
+                      <span className="text-muted-foreground">
+                        Max reward amount
+                      </span>
+                      <Input
+                        type="number"
+                        step="any"
+                        value={maxRewardAmount}
+                        onChange={(ev) => setMaxRewardAmount(ev.target.value)}
+                      />
+                    </label>
+                  </>
+                ) : (
+                  <label className="grid gap-1.5 text-sm">
+                    <span className="text-muted-foreground">Reward amount</span>
+                    <Input
+                      type="number"
+                      step="any"
+                      value={rewardAmount}
+                      onChange={(ev) => setRewardAmount(ev.target.value)}
+                      required
+                    />
+                  </label>
+                )}
                 <label className="grid gap-1.5 text-sm">
                   <span className="text-muted-foreground">Top-up threshold</span>
                   <Input
@@ -292,6 +424,17 @@ function AdminCreateCampaignPageInner() {
                     step={1}
                     value={maxClaimPerUser}
                     onChange={(ev) => setMaxClaimPerUser(ev.target.value)}
+                    required
+                  />
+                </label>
+                <label className="grid gap-1.5 text-sm">
+                  <span className="text-muted-foreground">Min obtain days</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={minObtainDays}
+                    onChange={(ev) => setMinObtainDays(ev.target.value)}
                     required
                   />
                 </label>

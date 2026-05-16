@@ -1,4 +1,3 @@
-import type { api_JoinCampaignReq } from "@/lib/api/models/api_JoinCampaignReq";
 import type { api_SimulateTopUpReq } from "@/lib/api/models/api_SimulateTopUpReq";
 import type { StandardEnvelope } from "@/lib/admin/campaign-admin-api";
 import { buildPublicApiUrl } from "@/lib/admin/campaign-admin-api";
@@ -7,15 +6,12 @@ import { withClerkAuthorization } from "@/lib/auth/clerk-token";
 
 export function buildCampaignLandingPageUrl(
   campaignId: number,
-  query?: { userId?: number; lang?: string },
+  query?: { lang?: string },
 ): string {
   const base = buildPublicApiUrl(
     `/campaign-center-api/v1/web/campaigns/${campaignId}/landing-page`,
   );
   const usp = new URLSearchParams();
-  if (query?.userId != null && Number.isFinite(query.userId)) {
-    usp.set("userId", String(query.userId));
-  }
   if (query?.lang?.trim()) {
     usp.set("lang", query.lang.trim());
   }
@@ -25,7 +21,7 @@ export function buildCampaignLandingPageUrl(
 
 export async function fetchCampaignLandingPage(
   campaignId: number,
-  query?: { userId?: number; lang?: string },
+  query?: { lang?: string },
 ): Promise<StandardEnvelope<unknown>> {
   const url = buildCampaignLandingPageUrl(campaignId, query);
   return fetchJsonEnvelope(url, { method: "GET" });
@@ -33,13 +29,17 @@ export async function fetchCampaignLandingPage(
 
 async function postWebEnvelope<T>(
   path: string,
-  body: unknown,
+  body?: unknown,
 ): Promise<StandardEnvelope<T>> {
   const url = buildPublicApiUrl(path);
   const headers = new Headers();
-  headers.set("Content-Type", "application/json");
+  const init: RequestInit = { method: "POST", headers };
+  if (body !== undefined) {
+    headers.set("Content-Type", "application/json");
+    init.body = JSON.stringify(body);
+  }
   await withClerkAuthorization(url, headers);
-  const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+  const res = await fetch(url, init);
   const json = (await res.json()) as StandardEnvelope<T>;
   if (!res.ok) {
     throw new Error(json.message ?? `${res.status} ${res.statusText}`);
@@ -49,11 +49,9 @@ async function postWebEnvelope<T>(
 
 export async function postCampaignJoin(
   campaignId: number,
-  payload: api_JoinCampaignReq,
 ): Promise<StandardEnvelope<unknown>> {
   return postWebEnvelope(
     `/campaign-center-api/v1/web/campaigns/${campaignId}/join`,
-    payload,
   );
 }
 

@@ -2,6 +2,19 @@
 
 import type { CampaignFormValues } from "@/lib/admin/campaign-form-values";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  CAMPAIGN_MARKET_OPTIONS,
+  CAMPAIGN_TYPE_OPTIONS,
+  REWARD_TYPE_OPTIONS,
+  USER_SEGMENT_OPTIONS,
+} from "@/lib/admin/campaign-options";
 
 type CampaignDetailsFormProps = {
   values: CampaignFormValues;
@@ -27,6 +40,7 @@ export function CampaignDetailsForm({
   const set = (p: Partial<CampaignFormValues>) => {
     if (!readOnly && onChange) onChange(patch(values, p));
   };
+  const isPercentageReward = values.rewardMode === "PERCENTAGE";
 
   return (
     <div className="flex flex-col gap-4">
@@ -48,36 +62,60 @@ export function CampaignDetailsForm({
       </label>
       <label className="grid gap-1.5 text-sm">
         <span className="text-zinc-400">Type</span>
-        <Input
+        <Select
           value={values.type}
-          onChange={(e) => set({ type: e.target.value })}
           disabled={ro}
-          readOnly={ro}
-          required={!ro}
-          className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
-        />
+          onValueChange={(type) => set({ type })}
+        >
+          <SelectTrigger className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70">
+            <SelectValue placeholder="Select campaign type" />
+          </SelectTrigger>
+          <SelectContent>
+            {CAMPAIGN_TYPE_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </label>
       <label className="grid gap-1.5 text-sm">
         <span className="text-zinc-400">Target market</span>
-        <Input
+        <Select
           value={values.targetMarket}
-          onChange={(e) => set({ targetMarket: e.target.value })}
           disabled={ro}
-          readOnly={ro}
-          required={!ro}
-          className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
-        />
+          onValueChange={(targetMarket) => set({ targetMarket })}
+        >
+          <SelectTrigger className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70">
+            <SelectValue placeholder="Select target market" />
+          </SelectTrigger>
+          <SelectContent>
+            {CAMPAIGN_MARKET_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </label>
       <label className="grid gap-1.5 text-sm">
         <span className="text-zinc-400">Target user segment</span>
-        <Input
+        <Select
           value={values.targetUserSegment}
-          onChange={(e) => set({ targetUserSegment: e.target.value })}
           disabled={ro}
-          readOnly={ro}
-          required={!ro}
-          className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
-        />
+          onValueChange={(targetUserSegment) => set({ targetUserSegment })}
+        >
+          <SelectTrigger className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70">
+            <SelectValue placeholder="Select user segment" />
+          </SelectTrigger>
+          <SelectContent>
+            {USER_SEGMENT_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </label>
       <label className="grid gap-1.5 text-sm">
         <span className="text-zinc-400">Landing page ID (optional)</span>
@@ -141,27 +179,89 @@ export function CampaignDetailsForm({
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1.5 text-sm">
             <span className="text-zinc-400">Reward type</span>
-            <Input
+            <Select
               value={values.rewardType}
-              onChange={(e) => set({ rewardType: e.target.value })}
               disabled={ro}
-              readOnly={ro}
-              required={!ro}
-              className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
-            />
+              onValueChange={(rewardType) => set({ rewardType })}
+            >
+              <SelectTrigger className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70">
+                <SelectValue placeholder="Select reward type" />
+              </SelectTrigger>
+              <SelectContent>
+                {REWARD_TYPE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <label className="grid gap-1.5 text-sm">
-            <span className="text-zinc-400">Reward amount</span>
-            <Input
-              type="number"
-              step="any"
-              value={values.rewardAmount}
-              onChange={(e) => set({ rewardAmount: e.target.value })}
+            <span className="text-zinc-400">Reward mode</span>
+            <Select
+              value={values.rewardMode}
+              onValueChange={(rewardMode) => set({ rewardMode })}
               disabled={ro}
-              required={!ro}
+            >
+              <SelectTrigger className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70">
+                <SelectValue placeholder="Select reward mode" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FIXED_AMOUNT">Fixed amount</SelectItem>
+                <SelectItem value="PERCENTAGE">Percentage</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-zinc-400">Reward currency</span>
+            <Input
+              value={values.rewardCurrency}
+              onChange={(e) => set({ rewardCurrency: e.target.value })}
+              disabled={ro}
+              readOnly={ro}
               className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
             />
           </label>
+          {isPercentageReward ? (
+            <>
+              <label className="grid gap-1.5 text-sm">
+                <span className="text-zinc-400">Reward percentage</span>
+                <Input
+                  type="number"
+                  step="any"
+                  value={values.rewardPercentage}
+                  onChange={(e) => set({ rewardPercentage: e.target.value })}
+                  disabled={ro}
+                  required={!ro}
+                  className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
+                />
+              </label>
+              <label className="grid gap-1.5 text-sm">
+                <span className="text-zinc-400">Max reward amount</span>
+                <Input
+                  type="number"
+                  step="any"
+                  value={values.maxRewardAmount}
+                  onChange={(e) => set({ maxRewardAmount: e.target.value })}
+                  disabled={ro}
+                  className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
+                />
+              </label>
+            </>
+          ) : (
+            <label className="grid gap-1.5 text-sm">
+              <span className="text-zinc-400">Reward amount</span>
+              <Input
+                type="number"
+                step="any"
+                value={values.rewardAmount}
+                onChange={(e) => set({ rewardAmount: e.target.value })}
+                disabled={ro}
+                required={!ro}
+                className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
+              />
+            </label>
+          )}
           <label className="grid gap-1.5 text-sm">
             <span className="text-zinc-400">Top-up threshold</span>
             <Input
@@ -182,6 +282,19 @@ export function CampaignDetailsForm({
               step={1}
               value={values.maxClaimPerUser}
               onChange={(e) => set({ maxClaimPerUser: e.target.value })}
+              disabled={ro}
+              required={!ro}
+              className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-zinc-400">Min obtain days</span>
+            <Input
+              type="number"
+              min={0}
+              step={1}
+              value={values.minObtainDays}
+              onChange={(e) => set({ minObtainDays: e.target.value })}
               disabled={ro}
               required={!ro}
               className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
