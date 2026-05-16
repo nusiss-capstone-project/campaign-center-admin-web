@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "gen:api": "openapi --input https://campaign-center-api-dev.up.railway.app/campaign-center-api/v1/swagger/doc.json --output src/lib/api --client fetch"
+    "gen:api": "openapi --input http://localhost:8080/campaign-center-api/v1/swagger/doc.json --output src/lib/api --client fetch"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

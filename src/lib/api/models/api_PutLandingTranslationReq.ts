@@ -2,10 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type api_LandingPageBody = {
-    bannerImageUrl: string;
-    defaultLang: string;
+export type api_PutLandingTranslationReq = {
     description: string;
+    operator?: string;
     terms: string;
     title: string;
 };

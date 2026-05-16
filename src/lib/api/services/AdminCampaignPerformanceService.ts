@@ -2,86 +2,93 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { api_JoinCampaignReq } from '../models/api_JoinCampaignReq';
-import type { api_SimulateTopUpReq } from '../models/api_SimulateTopUpReq';
 import type { data_StandardResponse } from '../models/data_StandardResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
-export class UserCampaignService {
+export class AdminCampaignPerformanceService {
     /**
-     * Join campaign (user)
+     * List campaign participations (admin)
      * @param campaignId Campaign ID
-     * @param body User id
-     * @returns data_StandardResponse success or business error code in body
-     * @throws ApiError
-     */
-    public static postWebCampaignsJoin(
-        campaignId: number,
-        body: api_JoinCampaignReq,
-    ): CancelablePromise<data_StandardResponse> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/web/campaigns/{campaignId}/join',
-            path: {
-                'campaignId': campaignId,
-            },
-            body: body,
-            errors: {
-                400: `bad request`,
-                503: `database unavailable`,
-            },
-        });
-    }
-    /**
-     * Get campaign landing page (user)
-     * @param campaignId Campaign ID
-     * @param userId User ID for participation status
-     * @param lang Preferred language; falls back to default
+     * @param page Page (default 1)
+     * @param pageSize Page size (default 20)
+     * @param userId Filter by user ID
+     * @param status Filter by reward status e.g. GRANTED
      * @returns data_StandardResponse success
      * @throws ApiError
      */
-    public static getWebCampaignsLandingPage(
+    public static getAdminCampaignsParticipations(
         campaignId: number,
+        page?: number,
+        pageSize?: number,
         userId?: number,
-        lang?: string,
+        status?: string,
     ): CancelablePromise<data_StandardResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/web/campaigns/{campaignId}/landing-page',
+            url: '/admin/campaigns/{campaignId}/participations',
             path: {
                 'campaignId': campaignId,
             },
             query: {
+                'page': page,
+                'pageSize': pageSize,
                 'userId': userId,
-                'lang': lang,
+                'status': status,
             },
             errors: {
-                404: `not found`,
+                404: `campaign not found`,
                 503: `database unavailable`,
             },
         });
     }
     /**
-     * Simulate top-up with account recharge (user)
+     * List campaign daily performance (admin)
      * @param campaignId Campaign ID
-     * @param body User and amount
-     * @returns data_StandardResponse success, manual review, or business error code
+     * @param startDate Start date YYYY-MM-DD
+     * @param endDate End date YYYY-MM-DD
+     * @returns data_StandardResponse success
      * @throws ApiError
      */
-    public static postWebCampaignsTopUp(
+    public static getAdminCampaignsPerformanceDaily(
         campaignId: number,
-        body: api_SimulateTopUpReq,
+        startDate: string,
+        endDate: string,
     ): CancelablePromise<data_StandardResponse> {
         return __request(OpenAPI, {
-            method: 'POST',
-            url: '/web/campaigns/{campaignId}/top-up',
+            method: 'GET',
+            url: '/admin/campaigns/{campaignId}/performance/daily',
             path: {
                 'campaignId': campaignId,
             },
-            body: body,
+            query: {
+                'startDate': startDate,
+                'endDate': endDate,
+            },
             errors: {
                 400: `bad request`,
+                404: `campaign not found`,
+                503: `database unavailable`,
+            },
+        });
+    }
+    /**
+     * Get campaign performance summary (admin)
+     * @param campaignId Campaign ID
+     * @returns data_StandardResponse success
+     * @throws ApiError
+     */
+    public static getAdminCampaignsPerformanceSummary(
+        campaignId: number,
+    ): CancelablePromise<data_StandardResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/admin/campaigns/{campaignId}/performance/summary',
+            path: {
+                'campaignId': campaignId,
+            },
+            errors: {
+                404: `campaign not found`,
                 503: `database unavailable`,
             },
         });
