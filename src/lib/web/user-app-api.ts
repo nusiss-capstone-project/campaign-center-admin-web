@@ -1,8 +1,8 @@
-import { AdminCampaignService } from "@/lib/api/services/AdminCampaignService";
 import { UserAccountService } from "@/lib/api/services/UserAccountService";
 import type { data_StandardResponse } from "@/lib/api/models/data_StandardResponse";
 import { ApiError } from "@/lib/api/core/ApiError";
-import { normalizeCampaignRows } from "@/lib/admin/campaign-row";
+import { buildPublicApiUrl } from "@/lib/admin/campaign-admin-api";
+import { fetchWithClerkAuthorization } from "@/lib/auth/clerk-token";
 
 export const DEFAULT_WEB_USER_ID = 10001;
 export const DEFAULT_WEB_CURRENCY = "USDT";
@@ -34,12 +34,22 @@ export type WalletTransactionsResult = {
 
 export type UserCampaignCard = {
   id: number;
-  title: string;
-  description: string;
-  periodLabel: string;
-  statusLabel: string;
-  rewardLabel: string;
-  participantLabel: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  joined?: boolean;
+};
+
+export type UserCampaignGroups = {
+  ongoing: UserCampaignCard[];
+  upcoming: UserCampaignCard[];
+};
+
+export type UserProfile = {
+  email: string;
+  kycChecked: boolean;
+  registeredAt: string;
+  username: string;
 };
 
 function unwrap<T>(body: data_StandardResponse): T {
@@ -103,6 +113,20 @@ function pickNullableNum(
   return null;
 }
 
+function pickBool(o: Record<string, unknown> | null, keys: string[]): boolean {
+  if (!o) return false;
+  for (const key of keys) {
+    const v = o[key];
+    if (typeof v === "boolean") return v;
+    if (typeof v === "string" && v.trim()) {
+      const normalized = v.trim().toLowerCase();
+      if (normalized === "true") return true;
+      if (normalized === "false") return false;
+    }
+  }
+  return false;
+}
+
 export function formatMoney(amount: number, currency = DEFAULT_WEB_CURRENCY) {
   const cur = /^[A-Z]{3,5}$/i.test(currency) ? currency.toUpperCase() : "USD";
   try {
@@ -124,6 +148,17 @@ export function formatDateTime(raw: string): string {
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+  });
+}
+
+export function formatDate(raw: string): string {
+  if (!raw) return "—";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
   });
 }
 
@@ -223,47 +258,69 @@ export async function fetchWalletTransactions(params: {
   return normalizeTransactions(unwrap<unknown>(body));
 }
 
-function campaignRewardLabel(raw: Record<string, unknown>): string {
-  const amount = pickNullableNum(raw, [
-    "rewardAmount",
-    "rewardIssuedAmount",
-    "totalRewardAmount",
-  ]);
-  const currency = pickStr(raw, ["currency"]) || DEFAULT_WEB_CURRENCY;
-  return amount != null ? `${formatMoney(amount, currency)} rewards` : "Rewards available";
+function normalizeCampaignCard(data: unknown): UserCampaignCard | null {
+  const o = asRecord(data);
+  const id = pickNullableNum(o, ["id", "campaignId", "campaign_id"]);
+  const name = pickStr(o, ["name", "title"]);
+  if (id == null || !name) return null;
+
+  return {
+    id,
+    name,
+    startTime: pickStr(o, ["startTime", "start_time"]),
+    endTime: pickStr(o, ["endTime", "end_time"]),
+    joined: o && "joined" in o ? pickBool(o, ["joined"]) : undefined,
+  };
 }
 
-export async function fetchUserCampaignCards(): Promise<UserCampaignCard[]> {
-  // Generated user-facing service currently has detail/join/top-up only; use generated campaign list
-  // service and show published campaigns in the user experience.
-  const body = await AdminCampaignService.getAdminCampaigns(1, 30, 2);
-  const data = unwrap<unknown>(body);
-  const o = asRecord(data);
-  const rawItems = Array.isArray(data)
-    ? data
-    : Array.isArray(o?.items)
-      ? (o.items as Record<string, unknown>[])
-      : [];
+function normalizeCampaignGroup(data: unknown): UserCampaignCard[] {
+  const items = Array.isArray(data) ? data : [];
+  return items
+    .map((item) => normalizeCampaignCard(item))
+    .filter((item): item is UserCampaignCard => item != null);
+}
 
-  return normalizeCampaignRows(rawItems).map((row, index) => {
-    const raw = rawItems[index] ?? {};
-    const description =
-      pickStr(raw, ["description", "subtitle", "summary"]) ||
-      `${row.targetMarket} · ${row.segment}`;
-    const participants = pickNullableNum(raw, [
-      "participantCount",
-      "participants",
-      "participationCount",
-    ]);
-    return {
-      id: row.id,
-      title: row.name,
-      description,
-      periodLabel: row.periodLabel,
-      statusLabel: row.statusLabel,
-      rewardLabel: campaignRewardLabel(raw),
-      participantLabel:
-        participants != null ? `${participants.toLocaleString()} participants` : "Open to users",
-    };
-  });
+export function normalizeUserCampaignGroups(data: unknown): UserCampaignGroups {
+  const o = asRecord(data);
+  return {
+    ongoing: normalizeCampaignGroup(o?.ongoing),
+    upcoming: normalizeCampaignGroup(o?.upcoming),
+  };
+}
+
+function userCampaignsUrl(): string {
+  const client = (process.env.NEXT_PUBLIC_CLIENT ?? "web").trim() || "web";
+  return buildPublicApiUrl(
+    `/campaign-center-api/v1/${encodeURIComponent(client)}/campaigns`,
+  );
+}
+
+export async function fetchUserCampaignGroups(): Promise<UserCampaignGroups> {
+  const res = await fetchWithClerkAuthorization(userCampaignsUrl());
+  const body = (await res.json()) as data_StandardResponse;
+  if (!res.ok) {
+    throw new Error(body.message ?? `${res.status} ${res.statusText}`);
+  }
+  return normalizeUserCampaignGroups(unwrap<unknown>(body));
+}
+
+export function normalizeUserProfile(data: unknown): UserProfile {
+  const o = asRecord(data);
+  return {
+    email: pickStr(o, ["email"]),
+    kycChecked: pickBool(o, ["kycChecked", "kyc_checked"]),
+    registeredAt: pickStr(o, ["registeredAt", "registered_at"]),
+    username: pickStr(o, ["username"]),
+  };
+}
+
+export async function fetchUserProfile(): Promise<UserProfile> {
+  const res = await fetchWithClerkAuthorization(
+    buildPublicApiUrl("/campaign-center-api/v1/web/user-profile"),
+  );
+  const body = (await res.json()) as data_StandardResponse;
+  if (!res.ok) {
+    throw new Error(body.message ?? `${res.status} ${res.statusText}`);
+  }
+  return normalizeUserProfile(unwrap<unknown>(body));
 }

@@ -26,6 +26,7 @@ import {
   parseCampaignDetailToFormValues,
   pickCampaignStatus,
   statusCodeToLabel,
+  toRewardRulesPayload,
 } from "@/lib/admin/campaign-form-values";
 
 function toUpdatePayload(v: CampaignFormValues): api_UpdateCampaignReq {
@@ -38,12 +39,7 @@ function toUpdatePayload(v: CampaignFormValues): api_UpdateCampaignReq {
     registrationEndTime: localDatetimeToIso(v.registrationEndTime),
     campaignStartTime: localDatetimeToIso(v.campaignStartTime),
     campaignEndTime: localDatetimeToIso(v.campaignEndTime),
-    rewardRules: {
-      rewardType: v.rewardType.trim(),
-      rewardAmount: Number(v.rewardAmount),
-      topupThreshold: Number(v.topupThreshold),
-      maxClaimPerUser: Number(v.maxClaimPerUser),
-    },
+    rewardRules: toRewardRulesPayload(v),
   };
   if (landingTrim !== "") {
     const n = Number(landingTrim);
