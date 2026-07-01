@@ -3,8 +3,13 @@ import { redirect } from "next/navigation";
 
 export default async function Home() {
   const user = await currentUser();
-  const role = (user?.publicMetadata as Record<string, unknown> | undefined)
+
+  if (!user) {
+    redirect("/sign-in");
+  }
+
+  const role = (user.publicMetadata as Record<string, unknown> | undefined)
     ?.role;
 
-  redirect(role === "admin" ? "/admin/campaigns" : "/wallet");
+  redirect(role === "admin" ? "/admin/campaigns" : "/forbidden");
 }
