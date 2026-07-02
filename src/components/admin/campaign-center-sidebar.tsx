@@ -3,13 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BarChart3,
   HelpCircle,
   LayoutDashboard,
   LayoutTemplate,
+  ListTodo,
   Megaphone,
   Settings,
-  Users,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -18,8 +17,7 @@ const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/admin/landing-pages", label: "Landing Pages", icon: LayoutTemplate },
-  { href: "/admin/audiences", label: "Audiences", icon: Users },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/admin/task-group", label: "Tasks", icon: ListTodo },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
 
