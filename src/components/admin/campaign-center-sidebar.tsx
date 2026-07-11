@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  Gift,
   HelpCircle,
   LayoutDashboard,
   LayoutTemplate,
@@ -18,10 +19,18 @@ const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/admin/landing-pages", label: "Landing Pages", icon: LayoutTemplate },
+  { href: "/admin/rewards/projects", label: "Reward Management", icon: Gift },
   { href: "/admin/audiences", label: "Audiences", icon: Users },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
+
+function rewardSectionFromPath(pathname: string): "projects" | "finance-docs" | null {
+  if (pathname.startsWith("/admin/rewards/finance-docs")) return "finance-docs";
+  if (pathname.startsWith("/admin/rewards/projects")) return "projects";
+  if (pathname.startsWith("/admin/rewards")) return "projects";
+  return null;
+}
 
 function campaignIdFromPath(pathname: string): string | null {
   const m = pathname.match(/^\/admin\/campaigns\/(\d+)(?:\/|$)/);
@@ -31,6 +40,7 @@ function campaignIdFromPath(pathname: string): string | null {
 export function CampaignCenterSidebar() {
   const pathname = usePathname();
   const campaignId = campaignIdFromPath(pathname);
+  const rewardSection = rewardSectionFromPath(pathname);
 
   return (
     <aside className="flex w-[260px] shrink-0 flex-col border-r border-white/10 bg-black">
@@ -50,7 +60,9 @@ export function CampaignCenterSidebar() {
           const active =
             href === "/admin"
               ? pathname === "/admin"
-              : pathname === href || pathname.startsWith(`${href}/`);
+              : href === "/admin/rewards/projects"
+                ? pathname.startsWith("/admin/rewards")
+                : pathname === href || pathname.startsWith(`${href}/`);
           return (
             <div key={href} className="flex flex-col gap-0.5">
               <Link
@@ -94,6 +106,32 @@ export function CampaignCenterSidebar() {
                     )}
                   >
                     Performance
+                  </Link>
+                </div>
+              ) : null}
+              {href === "/admin/rewards/projects" && rewardSection ? (
+                <div className="ml-4 flex flex-col gap-0.5 border-l border-white/10 py-1 pl-3">
+                  <Link
+                    href="/admin/rewards/projects"
+                    className={cn(
+                      "rounded-md px-2.5 py-2 text-xs font-medium transition-colors",
+                      rewardSection === "projects"
+                        ? "bg-zinc-800 text-white"
+                        : "text-zinc-500 hover:bg-zinc-900/60 hover:text-zinc-200",
+                    )}
+                  >
+                    Projects
+                  </Link>
+                  <Link
+                    href="/admin/rewards/finance-docs"
+                    className={cn(
+                      "rounded-md px-2.5 py-2 text-xs font-medium transition-colors",
+                      rewardSection === "finance-docs"
+                        ? "bg-zinc-800 text-white"
+                        : "text-zinc-500 hover:bg-zinc-900/60 hover:text-zinc-200",
+                    )}
+                  >
+                    Finance Docs
                   </Link>
                 </div>
               ) : null}

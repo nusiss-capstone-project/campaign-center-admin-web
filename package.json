@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "audit:high": "npm audit --audit-level=high",
     "ci:check": "npm run lint && npm run typecheck && npm run build",
-    "gen:api": "openapi --input https://campaign-center-api-dev.up.railway.app/campaign-center-api/v1/swagger/doc.json --output src/lib/api --client fetch"
+    "gen:api": "openapi --input https://campaign-center-api-dev.up.railway.app/campaign-center-api/v1/swagger/doc.json --output src/lib/api --client fetch",
+    "gen:api:reward": "openapi --input https://campaignhub.best/reward-ms/v1/swagger/doc.json --output src/lib/reward-api --client fetch"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.3.5",
