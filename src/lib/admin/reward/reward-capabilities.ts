@@ -15,6 +15,10 @@ export type RewardCapabilities = {
   canEditIssueRequest: boolean;
   canSubmitIssueRequest: boolean;
   canApproveIssueRequest: boolean;
+  canViewTemplates: boolean;
+  canCreateTemplate: boolean;
+  canEditTemplate: boolean;
+  canPublishTemplate: boolean;
 };
 
 const ALL_CAPABILITIES: RewardCapabilities = {
@@ -30,6 +34,10 @@ const ALL_CAPABILITIES: RewardCapabilities = {
   canEditIssueRequest: true,
   canSubmitIssueRequest: true,
   canApproveIssueRequest: true,
+  canViewTemplates: true,
+  canCreateTemplate: true,
+  canEditTemplate: true,
+  canPublishTemplate: true,
 };
 
 /** Placeholder until Clerk metadata drives RBAC. */
@@ -83,4 +91,16 @@ export function isIssueRequestReadonly(status: string): boolean {
     s === "ISSUED" ||
     s === "ENDED"
   );
+}
+
+export function canEditTemplateStatus(status: string): boolean {
+  return status.toUpperCase() === "DRAFT";
+}
+
+export function canPublishTemplateStatus(status: string): boolean {
+  return status.toUpperCase() === "DRAFT";
+}
+
+export function isTemplateReadonly(status: string): boolean {
+  return status.toUpperCase() === "PUBLISHED";
 }

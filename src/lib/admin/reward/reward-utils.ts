@@ -91,3 +91,22 @@ export function formatRewardTimestamp(raw: unknown): string {
     minute: "2-digit",
   });
 }
+
+const NUMERIC_STRING_PATTERN = /^-?\d+(\.\d+)?$/;
+
+export function formatMoneyDecimal(raw: string, fractionDigits = 2): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  if (!NUMERIC_STRING_PATTERN.test(trimmed)) return trimmed;
+  const value = Number(trimmed);
+  if (!Number.isFinite(value)) return trimmed;
+  return value.toFixed(fractionDigits);
+}
+
+export function hasAtMostDecimalPlaces(value: string, places: number): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+  const match = trimmed.match(/^-?\d+(?:\.(\d+))?$/);
+  if (!match) return false;
+  return !match[1] || match[1].length <= places;
+}

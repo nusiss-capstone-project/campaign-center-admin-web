@@ -1,5 +1,11 @@
-import type { data_PaymentConfigVO } from "@/lib/reward-api/models/data_PaymentConfigVO";
 import type { data_FinanceDocVO } from "@/lib/reward-api/models/data_FinanceDocVO";
+import type { data_PaymentConfigVO } from "@/lib/reward-api/models/data_PaymentConfigVO";
+import type { data_TemplateVOSwagger } from "@/lib/reward-api/models/data_TemplateVOSwagger";
+import {
+  configSummary,
+  parseTemplateType,
+  type TemplateType,
+} from "@/lib/admin/reward/template-form-values";
 import type { data_FinancePaymentVO } from "@/lib/reward-api/models/data_FinancePaymentVO";
 import type { data_IssueRequestVO } from "@/lib/reward-api/models/data_IssueRequestVO";
 import type { data_ProjectVO } from "@/lib/reward-api/models/data_ProjectVO";
@@ -52,6 +58,18 @@ export type IssueRequestDisplayRow = {
   requestStatus: string;
   creator: string;
   remark: string;
+  createdAtLabel: string;
+  updatedAtLabel: string;
+};
+
+export type TemplateDisplayRow = {
+  id: number;
+  type: TemplateType;
+  typeLabel: string;
+  unit: string;
+  voucherType: string;
+  status: string;
+  configSummary: string;
   createdAtLabel: string;
   updatedAtLabel: string;
 };
@@ -190,6 +208,44 @@ export function normalizeIssueRequestRows(
   return rows
     .map((r) => normalizeIssueRequestRow(r))
     .filter((r): r is IssueRequestDisplayRow => r != null);
+}
+
+function templateTypeLabel(type: TemplateType): string {
+  return type === "DYNAMIC" ? "Dynamic" : "Fixed";
+}
+
+export function normalizeTemplateRow(
+  row: Record<string, unknown>,
+): TemplateDisplayRow | null {
+  const id = pickNum(row, "id", "template_id", "templateId");
+  if (id == null) return null;
+  const type = parseTemplateType(row.type);
+  const config = row.config;
+  return {
+    id,
+    type,
+    typeLabel: templateTypeLabel(type),
+    unit: pickStr(row, "unit") || "—",
+    voucherType: pickStr(row, "voucher_type", "voucherType") || "—",
+    status: pickStr(row, "status") || "UNKNOWN",
+    configSummary: configSummary(type, config),
+    createdAtLabel: formatRewardTimestamp(row.created_at ?? row.createdAt),
+    updatedAtLabel: formatRewardTimestamp(row.updated_at ?? row.updatedAt),
+  };
+}
+
+export function normalizeTemplateRows(
+  rows: Record<string, unknown>[],
+): TemplateDisplayRow[] {
+  return rows
+    .map((r) => normalizeTemplateRow(r))
+    .filter((r): r is TemplateDisplayRow => r != null);
+}
+
+export function templateVoToRecord(
+  template: data_TemplateVOSwagger,
+): Record<string, unknown> {
+  return template as unknown as Record<string, unknown>;
 }
 
 export function financeDocVoToRecord(doc: data_FinanceDocVO): Record<string, unknown> {

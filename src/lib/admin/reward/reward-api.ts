@@ -15,16 +15,24 @@ import { AdminFinancePaymentService } from "@/lib/reward-api/services/AdminFinan
 import { AdminIssueRequestService } from "@/lib/reward-api/services/AdminIssueRequestService";
 import { AdminPaymentConfigService } from "@/lib/reward-api/services/AdminPaymentConfigService";
 import { AdminProjectService } from "@/lib/reward-api/services/AdminProjectService";
+import type { data_TemplateVOSwagger } from "@/lib/reward-api/models/data_TemplateVOSwagger";
+import { AdminTemplateService } from "@/lib/reward-api/services/AdminTemplateService";
+import type {
+  TemplateCreatePayload,
+  TemplateUpdatePayload,
+} from "@/lib/admin/reward/template-form-values";
 import {
   normalizeFinanceDocRow,
   normalizeFinanceDocRows,
   normalizeFinancePaymentRows,
   normalizeIssueRequestRows,
   normalizeProjectRows,
+  normalizeTemplateRows,
   type FinanceDocDisplayRow,
   type FinancePaymentDisplayRow,
   type IssueRequestDisplayRow,
   type ProjectDisplayRow,
+  type TemplateDisplayRow,
 } from "@/lib/admin/reward/reward-row";
 import {
   pageItems,
@@ -260,4 +268,68 @@ export function financeDocToDisplayRow(doc: data_FinanceDocVO): FinanceDocDispla
     };
   }
   return row;
+}
+
+export async function fetchTemplates(params: {
+  page: number;
+  size: number;
+}): Promise<PagedResult<TemplateDisplayRow>> {
+  const res = await AdminTemplateService.getRewardMsV1AdminTemplates(
+    params.page,
+    params.size,
+  );
+  const data = unwrapRewardResponse(res);
+  const items = pageItems(data.items);
+  return {
+    rows: normalizeTemplateRows(items),
+    page: data.page ?? params.page,
+    size: data.size ?? params.size,
+    total: data.total ?? items.length,
+  };
+}
+
+export async function fetchTemplateById(
+  templateId: number,
+): Promise<data_TemplateVOSwagger> {
+  const res = await AdminTemplateService.getRewardMsV1AdminTemplates(1, 100);
+  const data = unwrapRewardResponse(res);
+  const items = pageItems(data.items);
+  const raw = items.find((item) => {
+    const id = item.id ?? item.template_id ?? item.templateId;
+    return Number(id) === templateId;
+  });
+  if (!raw) {
+    throw new Error("Template not found");
+  }
+  return raw as unknown as data_TemplateVOSwagger;
+}
+
+export async function createTemplate(
+  payload: TemplateCreatePayload,
+): Promise<number> {
+  const res = await AdminTemplateService.postRewardMsV1AdminTemplates(
+    payload as Parameters<typeof AdminTemplateService.postRewardMsV1AdminTemplates>[0],
+  );
+  const data = unwrapRewardResponse(res);
+  if (data.template_id == null) {
+    throw new Error("Template ID missing from response");
+  }
+  return data.template_id;
+}
+
+export async function updateTemplate(
+  templateId: number,
+  payload: TemplateUpdatePayload,
+): Promise<data_TemplateVOSwagger> {
+  const res = await AdminTemplateService.putRewardMsV1AdminTemplates(
+    templateId,
+    payload as Parameters<typeof AdminTemplateService.putRewardMsV1AdminTemplates>[1],
+  );
+  return unwrapRewardResponse(res);
+}
+
+export async function publishTemplate(templateId: number): Promise<void> {
+  const res =
+    await AdminTemplateService.putRewardMsV1AdminTemplatesPublish(templateId);
+  unwrapRewardResponse(res);
 }
