@@ -25,8 +25,11 @@ const NAV = [
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
 
-function rewardSectionFromPath(pathname: string): "projects" | "finance-docs" | null {
+function rewardSectionFromPath(
+  pathname: string,
+): "projects" | "finance-docs" | "templates" | null {
   if (pathname.startsWith("/admin/rewards/finance-docs")) return "finance-docs";
+  if (pathname.startsWith("/admin/rewards/templates")) return "templates";
   if (pathname.startsWith("/admin/rewards/projects")) return "projects";
   if (pathname.startsWith("/admin/rewards")) return "projects";
   return null;
@@ -132,6 +135,17 @@ export function CampaignCenterSidebar() {
                     )}
                   >
                     Finance Docs
+                  </Link>
+                  <Link
+                    href="/admin/rewards/templates"
+                    className={cn(
+                      "rounded-md px-2.5 py-2 text-xs font-medium transition-colors",
+                      rewardSection === "templates"
+                        ? "bg-zinc-800 text-white"
+                        : "text-zinc-500 hover:bg-zinc-900/60 hover:text-zinc-200",
+                    )}
+                  >
+                    Templates
                   </Link>
                 </div>
               ) : null}
