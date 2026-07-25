@@ -42,7 +42,7 @@ export function TaskDetailsForm({
   operators,
   onChange,
   statusLabel,
-}: TaskDetailsFormProps) {
+}: Readonly<TaskDetailsFormProps>) {
   const set = (patch: Partial<TaskFormValues>) => {
     if (!readOnly && onChange) onChange(patchValues(values, patch));
   };

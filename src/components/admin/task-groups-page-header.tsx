@@ -16,7 +16,7 @@ export function TaskGroupsPageHeader({
   totalCount,
   searchQuery,
   onSearchChange,
-}: TaskGroupsPageHeaderProps) {
+}: Readonly<TaskGroupsPageHeaderProps>) {
   return (
     <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex flex-wrap items-center gap-3">

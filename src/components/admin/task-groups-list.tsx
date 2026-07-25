@@ -23,7 +23,7 @@ export function TaskGroupsList({
   rows,
   loading,
   errorMessage,
-}: TaskGroupsListProps) {
+}: Readonly<TaskGroupsListProps>) {
   if (loading) {
     return (
       <p className="rounded-xl border border-white/10 bg-zinc-900/50 px-4 py-8 text-center text-sm text-zinc-400">

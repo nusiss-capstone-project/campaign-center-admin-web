@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { TaskGroupStatusBadge } from "@/components/admin/task-group-status-badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,162 @@ function groupQuery(group: TaskGroupDisplayRow): string {
   }).toString();
 }
 
+function DraftGroupActions({
+  group,
+  canPublishGroup,
+  publishing,
+  onPublishGroup,
+}: Readonly<{
+  group: TaskGroupDisplayRow;
+  canPublishGroup: boolean;
+  publishing: boolean;
+  onPublishGroup: () => void;
+}>) {
+  const query = groupQuery(group);
+
+  return (
+    <>
+      <Button
+        asChild
+        variant="outline"
+        className="border-white/10 bg-zinc-900/50 text-zinc-200 hover:bg-zinc-800"
+      >
+        <Link href={`/admin/task-group/${group.id}/edit?${query}`}>
+          Edit Group
+        </Link>
+      </Button>
+      <Button
+        asChild
+        className="border-0 bg-white text-black hover:bg-zinc-200"
+      >
+        <Link href={`/admin/task-group/${group.id}/tasks/create?${query}`}>
+          Create Task
+        </Link>
+      </Button>
+      {canPublishGroup ? (
+        <Button
+          type="button"
+          onClick={onPublishGroup}
+          disabled={publishing}
+          className="border-0 bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+        >
+          {publishing ? "Publishing..." : "Publish Group"}
+        </Button>
+      ) : null}
+    </>
+  );
+}
+
+function PublishGroupHint({
+  groupIsDraft,
+  tasks,
+}: Readonly<{
+  groupIsDraft: boolean;
+  tasks: TaskDisplayRow[];
+}>) {
+  if (!groupIsDraft || tasks.length === 0 || allTasksPublished(tasks)) {
+    return null;
+  }
+
+  return (
+    <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+      Publish every task before publishing this task group.
+    </p>
+  );
+}
+
+function TaskCard({
+  groupId,
+  task,
+}: Readonly<{
+  groupId: number;
+  task: TaskDisplayRow;
+}>) {
+  return (
+    <Link
+      href={taskHref(groupId, task.id)}
+      className="block rounded-xl border border-white/10 bg-zinc-900/60 p-4 transition-colors hover:border-white/20 hover:bg-zinc-900"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="font-medium text-white">{task.name}</h3>
+          <p className="mt-1 text-sm text-zinc-500">task_id: {task.id}</p>
+          {task.expression ? (
+            <p className="mt-2 font-mono text-xs text-zinc-400">
+              {task.expression}
+            </p>
+          ) : null}
+        </div>
+        <TaskGroupStatusBadge
+          status={task.status}
+          label={task.statusLabel}
+        />
+      </div>
+      <div className="mt-3 flex flex-wrap gap-4 text-xs text-zinc-500">
+        {task.startTime ? <span>Start: {task.startTime}</span> : null}
+        {task.endTime ? <span>End: {task.endTime}</span> : null}
+        <span>{task.conditionCount} conditions</span>
+      </div>
+    </Link>
+  );
+}
+
+function TasksSection({
+  group,
+  tasks,
+  loading,
+  errorMessage,
+}: Readonly<{
+  group: TaskGroupDisplayRow;
+  tasks: TaskDisplayRow[];
+  loading: boolean;
+  errorMessage: string | null;
+}>) {
+  const groupIsDraft = isDraftStatus(group.status);
+
+  let body: ReactNode;
+  if (loading) {
+    body = (
+      <p className="rounded-xl border border-white/10 bg-zinc-900/50 px-4 py-8 text-center text-sm text-zinc-400">
+        Loading tasks...
+      </p>
+    );
+  } else if (errorMessage) {
+    body = (
+      <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-8 text-center text-sm text-red-200">
+        {errorMessage}
+      </p>
+    );
+  } else if (tasks.length === 0) {
+    body = (
+      <p className="rounded-xl border border-white/10 bg-zinc-900/50 px-4 py-8 text-center text-sm text-zinc-400">
+        No tasks in this group yet.
+        {groupIsDraft ? " Create a task to define completion conditions." : ""}
+      </p>
+    );
+  } else {
+    body = (
+      <ul className="flex flex-col gap-3">
+        {tasks.map((task) => (
+          <li key={task.id}>
+            <TaskCard groupId={group.id} task={task} />
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-lg font-medium text-white">Tasks</h2>
+        <span className="text-sm text-zinc-500">{tasks.length} total</span>
+      </div>
+      {body}
+    </section>
+  );
+}
+
 export function TaskGroupDetailPanel({
   group,
   tasks,
@@ -34,7 +191,7 @@ export function TaskGroupDetailPanel({
   errorMessage,
   publishing,
   onPublishGroup,
-}: TaskGroupDetailPanelProps) {
+}: Readonly<TaskGroupDetailPanelProps>) {
   const groupIsDraft = isDraftStatus(group.status);
   const canPublishGroup =
     groupIsDraft && allTasksPublished(tasks) && tasks.length > 0;
@@ -63,98 +220,24 @@ export function TaskGroupDetailPanel({
 
         <div className="flex flex-wrap items-center gap-2">
           {groupIsDraft ? (
-            <>
-              <Button
-                asChild
-                variant="outline"
-                className="border-white/10 bg-zinc-900/50 text-zinc-200 hover:bg-zinc-800"
-              >
-                <Link href={`/admin/task-group/${group.id}/edit?${groupQuery(group)}`}>
-                  Edit Group
-                </Link>
-              </Button>
-              <Button
-                asChild
-                className="border-0 bg-white text-black hover:bg-zinc-200"
-              >
-                <Link href={`/admin/task-group/${group.id}/tasks/create?${groupQuery(group)}`}>
-                  Create Task
-                </Link>
-              </Button>
-              {canPublishGroup ? (
-                <Button
-                  type="button"
-                  onClick={onPublishGroup}
-                  disabled={publishing}
-                  className="border-0 bg-emerald-500 text-slate-950 hover:bg-emerald-400"
-                >
-                  {publishing ? "Publishing..." : "Publish Group"}
-                </Button>
-              ) : null}
-            </>
+            <DraftGroupActions
+              group={group}
+              canPublishGroup={canPublishGroup}
+              publishing={publishing}
+              onPublishGroup={onPublishGroup}
+            />
           ) : null}
         </div>
       </div>
 
-      {!groupIsDraft ? null : tasks.length > 0 && !allTasksPublished(tasks) ? (
-        <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          Publish every task before publishing this task group.
-        </p>
-      ) : null}
+      <PublishGroupHint groupIsDraft={groupIsDraft} tasks={tasks} />
 
-      <section className="flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-medium text-white">Tasks</h2>
-          <span className="text-sm text-zinc-500">{tasks.length} total</span>
-        </div>
-
-        {loading ? (
-          <p className="rounded-xl border border-white/10 bg-zinc-900/50 px-4 py-8 text-center text-sm text-zinc-400">
-            Loading tasks...
-          </p>
-        ) : errorMessage ? (
-          <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-8 text-center text-sm text-red-200">
-            {errorMessage}
-          </p>
-        ) : tasks.length === 0 ? (
-          <p className="rounded-xl border border-white/10 bg-zinc-900/50 px-4 py-8 text-center text-sm text-zinc-400">
-            No tasks in this group yet.
-            {groupIsDraft ? " Create a task to define completion conditions." : ""}
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {tasks.map((task) => (
-              <li key={task.id}>
-                <Link
-                  href={taskHref(group.id, task.id)}
-                  className="block rounded-xl border border-white/10 bg-zinc-900/60 p-4 transition-colors hover:border-white/20 hover:bg-zinc-900"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="font-medium text-white">{task.name}</h3>
-                      <p className="mt-1 text-sm text-zinc-500">task_id: {task.id}</p>
-                      {task.expression ? (
-                        <p className="mt-2 font-mono text-xs text-zinc-400">
-                          {task.expression}
-                        </p>
-                      ) : null}
-                    </div>
-                    <TaskGroupStatusBadge
-                      status={task.status}
-                      label={task.statusLabel}
-                    />
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-4 text-xs text-zinc-500">
-                    {task.startTime ? <span>Start: {task.startTime}</span> : null}
-                    {task.endTime ? <span>End: {task.endTime}</span> : null}
-                    <span>{task.conditionCount} conditions</span>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <TasksSection
+        group={group}
+        tasks={tasks}
+        loading={loading}
+        errorMessage={errorMessage}
+      />
     </div>
   );
 }

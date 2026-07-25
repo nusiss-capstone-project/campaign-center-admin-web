@@ -16,7 +16,7 @@ export function TaskGroupsDashboard({
   rows,
   loading,
   errorMessage,
-}: TaskGroupsDashboardProps) {
+}: Readonly<TaskGroupsDashboardProps>) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredRows = useMemo(() => {

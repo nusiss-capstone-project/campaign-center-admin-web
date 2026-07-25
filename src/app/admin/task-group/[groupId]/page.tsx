@@ -19,8 +19,9 @@ import {
 } from "@/lib/admin/task-row";
 
 function parseGroupId(raw: string | string[] | undefined): number {
-  const value = typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : "";
-  return Number(value);
+  if (typeof raw === "string") return Number(raw);
+  if (Array.isArray(raw)) return Number(raw[0]);
+  return Number.NaN;
 }
 
 export default function AdminTaskGroupDetailPage() {

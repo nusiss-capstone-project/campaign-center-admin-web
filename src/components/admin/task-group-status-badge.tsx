@@ -21,10 +21,10 @@ const SPECS: Record<
 export function TaskGroupStatusBadge({
   status,
   label,
-}: {
+}: Readonly<{
   status: TaskStatus;
   label: string;
-}) {
+}>) {
   const spec = SPECS[status];
   return (
     <Badge

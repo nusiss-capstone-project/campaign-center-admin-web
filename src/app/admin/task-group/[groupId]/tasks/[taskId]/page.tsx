@@ -25,36 +25,33 @@ import {
   emptyTaskFormValues,
   parseTaskDetailToFormValues,
   toTaskPayload,
+  type TaskFormValues,
 } from "@/lib/admin/task-form-values";
 import { isDraftStatus, taskStatusLabel } from "@/lib/admin/task-row";
 
 function parseId(raw: string | string[] | undefined): number {
-  const value = typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : "";
-  return Number(value);
+  if (typeof raw === "string") return Number(raw);
+  if (Array.isArray(raw)) return Number(raw[0]);
+  return Number.NaN;
 }
 
-export default function AdminTaskDetailPage() {
-  const params = useParams();
-  const groupId = parseId(params?.groupId);
-  const taskId = parseId(params?.taskId);
+function isValidId(id: number): boolean {
+  return Number.isFinite(id) && id > 0;
+}
 
+function errorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback;
+}
+
+function useTaskDetail(groupId: number, taskId: number) {
   const [values, setValues] = useState(emptyTaskFormValues());
   const [metrics, setMetrics] = useState<DataMetricVO[]>([]);
   const [operators, setOperators] = useState<MetricOperatorVO[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const readOnly = !isDraftStatus(values.status);
-
   useEffect(() => {
-    if (
-      !Number.isFinite(groupId) ||
-      groupId <= 0 ||
-      !Number.isFinite(taskId) ||
-      taskId <= 0
-    ) {
+    if (!isValidId(groupId) || !isValidId(taskId)) {
       setLoading(false);
       setError("Invalid task id");
       return;
@@ -77,7 +74,7 @@ export default function AdminTaskDetailPage() {
         setOperators(operatorData);
       } catch (e) {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : "Load failed");
+        setError(errorMessage(e, "Load failed"));
         setValues(emptyTaskFormValues());
       } finally {
         if (!cancelled) setLoading(false);
@@ -90,8 +87,102 @@ export default function AdminTaskDetailPage() {
     };
   }, [groupId, taskId]);
 
+  return { values, setValues, metrics, operators, loading, error, setError };
+}
+
+type TaskEditorFormProps = {
+  values: TaskFormValues;
+  readOnly: boolean;
+  metrics: DataMetricVO[];
+  operators: MetricOperatorVO[];
+  error: string | null;
+  saving: boolean;
+  publishing: boolean;
+  backHref: string;
+  onChange: (values: TaskFormValues) => void;
+  onSave: (e: React.FormEvent) => void;
+  onPublish: () => void;
+};
+
+function TaskEditorForm({
+  values,
+  readOnly,
+  metrics,
+  operators,
+  error,
+  saving,
+  publishing,
+  backHref,
+  onChange,
+  onSave,
+  onPublish,
+}: Readonly<TaskEditorFormProps>) {
+  return (
+    <form onSubmit={onSave}>
+      <CardContent className="flex flex-col gap-6 px-6 py-6">
+        {error ? (
+          <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+            {error}
+          </p>
+        ) : null}
+        <TaskDetailsForm
+          values={values}
+          readOnly={readOnly}
+          metrics={metrics}
+          operators={operators}
+          onChange={onChange}
+          statusLabel={taskStatusLabel(
+            values.status === "PUBLISHED" ? "PUBLISHED" : "DRAFT",
+          )}
+        />
+      </CardContent>
+      <CardFooter className="justify-end gap-3 border-white/10 px-6 py-4">
+        <Button
+          asChild
+          variant="outline"
+          className="border-white/10 bg-zinc-900/50 text-zinc-200 hover:bg-zinc-800"
+        >
+          <Link href={backHref}>Back</Link>
+        </Button>
+        {!readOnly ? (
+          <>
+            <Button
+              type="submit"
+              disabled={saving}
+              className="border-0 bg-white text-black hover:bg-zinc-200"
+            >
+              {saving ? "Saving..." : "Save Task"}
+            </Button>
+            <Button
+              type="button"
+              disabled={publishing}
+              onClick={onPublish}
+              className="border-0 bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+            >
+              {publishing ? "Publishing..." : "Publish Task"}
+            </Button>
+          </>
+        ) : null}
+      </CardFooter>
+    </form>
+  );
+}
+
+export default function AdminTaskDetailPage() {
+  const params = useParams();
+  const groupId = parseId(params?.groupId);
+  const taskId = parseId(params?.taskId);
+
+  const { values, setValues, metrics, operators, loading, error, setError } =
+    useTaskDetail(groupId, taskId);
+  const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+
+  const readOnly = !isDraftStatus(values.status);
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    if (readOnly) return;
     setSaving(true);
     setError(null);
     try {
@@ -99,7 +190,7 @@ export default function AdminTaskDetailPage() {
       const saved = await saveTask(groupId, taskId, payload);
       setValues(parseTaskDetailToFormValues(saved));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
+      setError(errorMessage(err, "Save failed"));
     } finally {
       setSaving(false);
     }
@@ -115,7 +206,7 @@ export default function AdminTaskDetailPage() {
         status: "PUBLISHED",
       }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Publish failed");
+      setError(errorMessage(err, "Publish failed"));
     } finally {
       setPublishing(false);
     }
@@ -143,53 +234,19 @@ export default function AdminTaskDetailPage() {
             <p className="text-sm text-zinc-400">Loading task...</p>
           </CardContent>
         ) : (
-          <form onSubmit={readOnly ? (e) => e.preventDefault() : handleSave}>
-            <CardContent className="flex flex-col gap-6 px-6 py-6">
-              {error ? (
-                <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-                  {error}
-                </p>
-              ) : null}
-              <TaskDetailsForm
-                values={values}
-                readOnly={readOnly}
-                metrics={metrics}
-                operators={operators}
-                onChange={setValues}
-                statusLabel={taskStatusLabel(
-                  values.status === "PUBLISHED" ? "PUBLISHED" : "DRAFT",
-                )}
-              />
-            </CardContent>
-            <CardFooter className="justify-end gap-3 border-white/10 px-6 py-4">
-              <Button
-                asChild
-                variant="outline"
-                className="border-white/10 bg-zinc-900/50 text-zinc-200 hover:bg-zinc-800"
-              >
-                <Link href={backHref}>Back</Link>
-              </Button>
-              {!readOnly ? (
-                <>
-                  <Button
-                    type="submit"
-                    disabled={saving}
-                    className="border-0 bg-white text-black hover:bg-zinc-200"
-                  >
-                    {saving ? "Saving..." : "Save Task"}
-                  </Button>
-                  <Button
-                    type="button"
-                    disabled={publishing}
-                    onClick={handlePublish}
-                    className="border-0 bg-emerald-500 text-slate-950 hover:bg-emerald-400"
-                  >
-                    {publishing ? "Publishing..." : "Publish Task"}
-                  </Button>
-                </>
-              ) : null}
-            </CardFooter>
-          </form>
+          <TaskEditorForm
+            values={values}
+            readOnly={readOnly}
+            metrics={metrics}
+            operators={operators}
+            error={error}
+            saving={saving}
+            publishing={publishing}
+            backHref={backHref}
+            onChange={setValues}
+            onSave={handleSave}
+            onPublish={handlePublish}
+          />
         )}
       </Card>
     </div>

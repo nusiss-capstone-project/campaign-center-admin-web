@@ -4,15 +4,8 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { TaskGroupFormCard } from "@/components/admin/task-group-form-card";
+import { Card, CardContent } from "@/components/ui/card";
 import { fetchTaskGroups, saveTaskGroup } from "@/lib/admin/task-admin-fetch";
 import {
   emptyTaskGroupFormValues,
@@ -21,8 +14,9 @@ import {
 import { isDraftStatus, normalizeTaskGroupRow } from "@/lib/admin/task-row";
 
 function parseGroupId(raw: string | string[] | undefined): number {
-  const value = typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : "";
-  return Number(value);
+  if (typeof raw === "string") return Number(raw);
+  if (Array.isArray(raw)) return Number(raw[0]);
+  return Number.NaN;
 }
 
 export default function AdminTaskGroupEditPage() {
@@ -38,12 +32,12 @@ export default function AdminTaskGroupEditPage() {
   const [status, setStatus] = useState("DRAFT");
 
   const backHref = useMemo(() => {
-    const params = new URLSearchParams();
+    const query = new URLSearchParams();
     const name = searchParams.get("name");
     const statusParam = searchParams.get("status");
-    if (name) params.set("name", name);
-    if (statusParam) params.set("status", statusParam);
-    const qs = params.toString();
+    if (name) query.set("name", name);
+    if (statusParam) query.set("status", statusParam);
+    const qs = query.toString();
     return qs
       ? `/admin/task-group/${groupId}?${qs}`
       : `/admin/task-group/${groupId}`;
@@ -102,11 +96,11 @@ export default function AdminTaskGroupEditPage() {
     try {
       const payload = toTaskGroupPayload(values, groupId);
       await saveTaskGroup(payload);
-      const params = new URLSearchParams({
+      const query = new URLSearchParams({
         name: values.name.trim(),
         status,
       });
-      router.push(`/admin/task-group/${groupId}?${params.toString()}`);
+      router.push(`/admin/task-group/${groupId}?${query.toString()}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");
     } finally {
@@ -123,56 +117,25 @@ export default function AdminTaskGroupEditPage() {
         ← Back to task group
       </Link>
 
-      <Card className="gap-0 border-white/10 bg-zinc-900/50 py-0 text-zinc-100">
-        <CardHeader className="border-b border-white/10 px-6 pb-5 pt-6">
-          <CardTitle className="text-xl font-semibold text-white">
-            Edit Task Group
-          </CardTitle>
-        </CardHeader>
-        {loading ? (
+      {loading ? (
+        <Card className="gap-0 border-white/10 bg-zinc-900/50 py-0 text-zinc-100">
           <CardContent className="px-6 py-6">
             <p className="text-sm text-zinc-400">Loading...</p>
           </CardContent>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <CardContent className="flex flex-col gap-6 px-6 py-6">
-              {error ? (
-                <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-                  {error}
-                </p>
-              ) : null}
-              <label className="grid gap-2 text-sm">
-                <span className="font-medium text-zinc-300">Name</span>
-                <Input
-                  value={values.name}
-                  onChange={(e) =>
-                    setValues((prev) => ({ ...prev, name: e.target.value }))
-                  }
-                  placeholder="Enter task group name"
-                  required
-                  className="h-10 border-white/10 bg-zinc-900/80 text-zinc-100"
-                />
-              </label>
-            </CardContent>
-            <CardFooter className="justify-end gap-3 border-white/10 px-6 py-4">
-              <Button
-                asChild
-                variant="outline"
-                className="border-white/10 bg-zinc-900/50 text-zinc-200 hover:bg-zinc-800"
-              >
-                <Link href={backHref}>Cancel</Link>
-              </Button>
-              <Button
-                type="submit"
-                disabled={saving}
-                className="border-0 bg-white text-black hover:bg-zinc-200"
-              >
-                {saving ? "Saving..." : "Save"}
-              </Button>
-            </CardFooter>
-          </form>
-        )}
-      </Card>
+        </Card>
+      ) : (
+        <TaskGroupFormCard
+          title="Edit Task Group"
+          values={values}
+          error={error}
+          saving={saving}
+          submitLabel="Save"
+          savingLabel="Saving..."
+          cancelHref={backHref}
+          onChange={setValues}
+          onSubmit={handleSubmit}
+        />
+      )}
     </div>
   );
 }

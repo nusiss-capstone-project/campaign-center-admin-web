@@ -31,7 +31,7 @@ function pickNumber(obj: Record<string, unknown>, keys: string[]): number {
     const value = obj[key];
     if (typeof value === "number" && Number.isFinite(value)) return value;
   }
-  return NaN;
+  return Number.NaN;
 }
 
 export function normalizeTaskStatus(raw: unknown): TaskStatus {
