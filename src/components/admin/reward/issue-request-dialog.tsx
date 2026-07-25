@@ -53,7 +53,7 @@ export function IssueRequestDialog({
   submitting = false,
   error,
   onSubmit,
-}: IssueRequestDialogProps) {
+}: Readonly<IssueRequestDialogProps>) {
   const [values, setValues] = useState<IssueRequestFormValues>(
     initialValues ?? emptyIssueRequestFormValues(),
   );

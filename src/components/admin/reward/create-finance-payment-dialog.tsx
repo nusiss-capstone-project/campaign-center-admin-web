@@ -42,7 +42,7 @@ export function CreateFinancePaymentDialog({
   submitting = false,
   error,
   onSubmit,
-}: CreateFinancePaymentDialogProps) {
+}: Readonly<CreateFinancePaymentDialogProps>) {
   const [values, setValues] = useState<FinancePaymentFormValues>(
     emptyFinancePaymentFormValues(),
   );

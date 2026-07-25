@@ -103,10 +103,12 @@ export function formatMoneyDecimal(raw: string, fractionDigits = 2): string {
   return value.toFixed(fractionDigits);
 }
 
+const DECIMAL_PLACES_PATTERN = /^-?\d+(?:\.(\d+))?$/;
+
 export function hasAtMostDecimalPlaces(value: string, places: number): boolean {
   const trimmed = value.trim();
   if (!trimmed) return true;
-  const match = trimmed.match(/^-?\d+(?:\.(\d+))?$/);
+  const match = DECIMAL_PLACES_PATTERN.exec(trimmed);
   if (!match) return false;
   return !match[1] || match[1].length <= places;
 }

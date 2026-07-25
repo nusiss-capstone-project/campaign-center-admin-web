@@ -10,7 +10,7 @@ type FinanceDocsPageHeaderProps = {
   total: number;
 };
 
-export function FinanceDocsPageHeader({ total }: FinanceDocsPageHeaderProps) {
+export function FinanceDocsPageHeader({ total }: Readonly<FinanceDocsPageHeaderProps>) {
   const caps = useRewardCapabilities();
 
   return (

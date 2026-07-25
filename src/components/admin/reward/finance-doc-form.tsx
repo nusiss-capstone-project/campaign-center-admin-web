@@ -8,6 +8,7 @@ import type {
   ApplicationDetailFormRow,
   FinanceDocFormValues,
 } from "@/lib/admin/reward/reward-form-values";
+import { emptyApplicationDetailRow } from "@/lib/admin/reward/reward-form-values";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -43,7 +44,7 @@ export function FinanceDocForm({
   paymentConfigs,
   readOnly = false,
   showProjectSelect = true,
-}: FinanceDocFormProps) {
+}: Readonly<FinanceDocFormProps>) {
   const paymentOptions = paymentConfigs.flatMap((config) => {
     const payAddress = config.pay_address?.trim();
     if (!payAddress) return [];
@@ -104,7 +105,7 @@ export function FinanceDocForm({
               onClick={() =>
                 setDetail([
                   ...values.applicationDetail,
-                  { amount: "", payAddress: "" },
+                  emptyApplicationDetailRow(),
                 ])
               }
             >
@@ -116,7 +117,7 @@ export function FinanceDocForm({
 
         {values.applicationDetail.map((row, index) => (
           <div
-            key={index}
+            key={row.key}
             className="grid gap-3 rounded-lg border border-white/10 bg-zinc-900/40 p-4 md:grid-cols-[1fr_1fr_auto]"
           >
             <label className="grid gap-1.5 text-sm">

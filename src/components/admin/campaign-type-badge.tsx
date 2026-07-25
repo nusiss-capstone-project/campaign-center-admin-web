@@ -57,7 +57,7 @@ function formatTypeLabel(raw: string): string {
     .join(" ");
 }
 
-export function CampaignTypeBadge({ typeRaw }: { typeRaw: string }) {
+export function CampaignTypeBadge({ typeRaw }: Readonly<{ typeRaw: string }>) {
   const key = typeKey(typeRaw);
   const spec = STYLES[key];
   const label = key === "other" ? formatTypeLabel(typeRaw) : spec.label;

@@ -8,6 +8,7 @@ import type { data_UpdateIssueRequestRequest } from "@/lib/reward-api/models/dat
 import { EXPENSE_TYPE_OPTIONS } from "@/lib/admin/reward/reward-options";
 
 export type ApplicationDetailFormRow = {
+  key: string;
   amount: string;
   payAddress: string;
 };
@@ -32,8 +33,22 @@ export type FinancePaymentFormValues = {
   unit: string;
 };
 
+let applicationDetailKeySeq = 0;
+
+function newApplicationDetailKey(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  applicationDetailKeySeq += 1;
+  return `row-${Date.now()}-${applicationDetailKeySeq}`;
+}
+
 export function emptyApplicationDetailRow(): ApplicationDetailFormRow {
-  return { amount: "", payAddress: "" };
+  return {
+    key: newApplicationDetailKey(),
+    amount: "",
+    payAddress: "",
+  };
 }
 
 export function emptyFinanceDocFormValues(): FinanceDocFormValues {
@@ -66,49 +81,48 @@ export function parseFinanceDocToFormValues(
   doc: data_FinanceDocVO,
 ): FinanceDocFormValues {
   const detail = doc.application_detail ?? [];
+  const applicationDetail =
+    detail.length > 0
+      ? detail.map((item) => ({
+          ...emptyApplicationDetailRow(),
+          amount: item.amount ?? "",
+          payAddress: item.pay_address ?? "",
+        }))
+      : [emptyApplicationDetailRow()];
+
   return {
     projectId: doc.project_id != null ? String(doc.project_id) : "",
     description: doc.description ?? "",
-    applicationDetail:
-      detail.length > 0
-        ? detail.map((item) => ({
-            amount: item.amount ?? "",
-            payAddress: item.pay_address ?? "",
-          }))
-        : [emptyApplicationDetailRow()],
+    applicationDetail,
   };
+}
+
+function pickFormString(
+  row: Record<string, unknown>,
+  ...keys: string[]
+): string {
+  for (const key of keys) {
+    const value = row[key];
+    if (typeof value === "string") return value;
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+    if (typeof value === "boolean") return String(value);
+  }
+  return "";
 }
 
 export function parseIssueRequestToFormValues(
   row: Record<string, unknown>,
 ): IssueRequestFormValues {
-  const expenseType =
-    typeof row.expense_type === "string"
-      ? row.expense_type
-      : typeof row.expenseType === "string"
-        ? row.expenseType
-        : EXPENSE_TYPE_OPTIONS[0].value;
   return {
-    amount:
-      typeof row.amount === "string"
-        ? row.amount
-        : row.amount != null
-          ? String(row.amount)
-          : "",
-    unit:
-      typeof row.unit === "string"
-        ? row.unit
-        : row.unit != null
-          ? String(row.unit)
-          : "",
-    voucherType:
-      typeof row.voucher_type === "string"
-        ? row.voucher_type
-        : typeof row.voucherType === "string"
-          ? row.voucherType
-          : "",
-    expenseType,
-    remark: typeof row.remark === "string" ? row.remark : "",
+    amount: pickFormString(row, "amount"),
+    unit: pickFormString(row, "unit"),
+    voucherType: pickFormString(row, "voucher_type", "voucherType"),
+    expenseType:
+      pickFormString(row, "expense_type", "expenseType") ||
+      EXPENSE_TYPE_OPTIONS[0].value,
+    remark: pickFormString(row, "remark"),
   };
 }
 

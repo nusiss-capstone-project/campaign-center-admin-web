@@ -16,7 +16,7 @@ const DOT_STYLES: Record<string, string> = {
   APPROVED: "bg-emerald-400",
 };
 
-export function FinanceDocStatusBadge({ status }: { status: string }) {
+export function FinanceDocStatusBadge({ status }: Readonly<{ status: string }>) {
   const key = status.toUpperCase();
   const style = STATUS_STYLES[key] ?? "bg-zinc-500/10 text-zinc-400 ring-zinc-500/20";
   const dot = DOT_STYLES[key] ?? "bg-zinc-500";

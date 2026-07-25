@@ -25,7 +25,7 @@ type CampaignPerformanceTabProps = {
 
 export function CampaignPerformanceTab({
   campaignId,
-}: CampaignPerformanceTabProps) {
+}: Readonly<CampaignPerformanceTabProps>) {
   const defaults = defaultPerformanceDateRange();
   const [startDate, setStartDate] = useState(defaults.startDate);
   const [endDate, setEndDate] = useState(defaults.endDate);

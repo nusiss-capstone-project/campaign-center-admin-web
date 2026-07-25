@@ -79,16 +79,18 @@ export function normalizePerformanceSummary(
   };
 }
 
+function extractDailyList(data: unknown): unknown[] {
+  if (Array.isArray(data)) return data;
+  const record = asRecord(data);
+  if (Array.isArray(record?.items)) return record.items;
+  if (Array.isArray(record?.daily)) return record.daily;
+  return [];
+}
+
 export function normalizePerformanceDailyRows(
   data: unknown,
 ): CampaignPerformanceDailyRow[] {
-  const list = Array.isArray(data)
-    ? data
-    : Array.isArray(asRecord(data)?.items)
-      ? (asRecord(data)!.items as unknown[])
-      : Array.isArray(asRecord(data)?.daily)
-        ? (asRecord(data)!.daily as unknown[])
-        : [];
+  const list = extractDailyList(data);
 
   return list
     .map((item) => {

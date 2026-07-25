@@ -35,7 +35,7 @@ export function CampaignDetailsForm({
   readOnly,
   onChange,
   statusLabel,
-}: CampaignDetailsFormProps) {
+}: Readonly<CampaignDetailsFormProps>) {
   const ro = readOnly;
   const set = (p: Partial<CampaignFormValues>) => {
     if (!readOnly && onChange) onChange(patch(values, p));

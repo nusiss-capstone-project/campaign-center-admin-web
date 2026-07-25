@@ -12,7 +12,7 @@ const DOT_STYLES: Record<string, string> = {
   PUBLISHED: "bg-emerald-400",
 };
 
-export function TemplateStatusBadge({ status }: { status: string }) {
+export function TemplateStatusBadge({ status }: Readonly<{ status: string }>) {
   const key = status.toUpperCase();
   const style = STATUS_STYLES[key] ?? "bg-zinc-500/10 text-zinc-400 ring-zinc-500/20";
   const dot = DOT_STYLES[key] ?? "bg-zinc-500";

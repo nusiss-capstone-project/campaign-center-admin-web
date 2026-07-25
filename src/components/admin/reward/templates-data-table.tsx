@@ -23,7 +23,7 @@ type TemplatesDataTableProps = {
   rows: TemplateDisplayRow[];
 };
 
-export function TemplatesDataTable({ rows }: TemplatesDataTableProps) {
+export function TemplatesDataTable({ rows }: Readonly<TemplatesDataTableProps>) {
   const caps = useRewardCapabilities();
 
   return (

@@ -10,7 +10,7 @@ type TemplatesPageHeaderProps = {
   total: number;
 };
 
-export function TemplatesPageHeader({ total }: TemplatesPageHeaderProps) {
+export function TemplatesPageHeader({ total }: Readonly<TemplatesPageHeaderProps>) {
   const caps = useRewardCapabilities();
 
   return (

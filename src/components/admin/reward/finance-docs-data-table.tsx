@@ -23,7 +23,7 @@ type FinanceDocsDataTableProps = {
   rows: FinanceDocDisplayRow[];
 };
 
-export function FinanceDocsDataTable({ rows }: FinanceDocsDataTableProps) {
+export function FinanceDocsDataTable({ rows }: Readonly<FinanceDocsDataTableProps>) {
   const caps = useRewardCapabilities();
 
   return (

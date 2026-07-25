@@ -74,6 +74,22 @@ export default function AdminCampaignDetailPage() {
   const statusLabel = statusCodeToLabel(statusCode);
   const canEdit = statusCode === 1 || statusCode === 2;
 
+  function renderContent() {
+    if (loading) {
+      return <p className="text-sm text-zinc-500">Loading…</p>;
+    }
+    if (error) {
+      return (
+        <p className="text-sm text-red-400" role="alert">
+          {error}
+        </p>
+      );
+    }
+    return (
+      <CampaignDetailsForm values={values} readOnly statusLabel={statusLabel} />
+    );
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -107,21 +123,7 @@ export default function AdminCampaignDetailPage() {
             View campaign details
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {loading ? (
-            <p className="text-sm text-zinc-500">Loading…</p>
-          ) : error ? (
-            <p className="text-sm text-red-400" role="alert">
-              {error}
-            </p>
-          ) : (
-            <CampaignDetailsForm
-              values={values}
-              readOnly
-              statusLabel={statusLabel}
-            />
-          )}
-        </CardContent>
+        <CardContent>{renderContent()}</CardContent>
         {!loading && !error ? (
           <CardFooter className="border-t border-white/10 bg-transparent">
             <Button variant="outline" asChild className="border-white/10">

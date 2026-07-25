@@ -35,7 +35,7 @@ export function RemarkActionDialog({
   submitting = false,
   error,
   onConfirm,
-}: RemarkActionDialogProps) {
+}: Readonly<RemarkActionDialogProps>) {
   const [remark, setRemark] = useState("");
 
   function handleOpenChange(next: boolean) {

@@ -28,7 +28,7 @@ type TemplateDetailDashboardProps = {
 export function TemplateDetailDashboard({
   template,
   onRefresh,
-}: TemplateDetailDashboardProps) {
+}: Readonly<TemplateDetailDashboardProps>) {
   const caps = useRewardCapabilities();
   const templateId = template.id ?? 0;
   const status = template.status ?? "UNKNOWN";

@@ -20,6 +20,58 @@ import { rewardApiErrorMessage } from "@/lib/admin/reward/reward-utils";
 import { FinanceDocDetailDashboard } from "@/components/admin/reward/finance-doc-detail-dashboard";
 import { Button } from "@/components/ui/button";
 
+async function loadWithCancel<T>(
+  cancelled: () => boolean,
+  run: () => Promise<T>,
+  onSuccess: (value: T) => void,
+  onError: (message: string) => void,
+  onDone: () => void,
+): Promise<void> {
+  try {
+    const value = await run();
+    if (cancelled()) return;
+    onSuccess(value);
+  } catch (err) {
+    if (cancelled()) return;
+    onError(rewardApiErrorMessage(err));
+  } finally {
+    if (!cancelled()) onDone();
+  }
+}
+
+function FinanceDocLoadingState() {
+  return (
+    <div className="p-6">
+      <p className="text-sm text-zinc-500">Loading finance doc…</p>
+    </div>
+  );
+}
+
+function FinanceDocErrorState({
+  message,
+  onRetry,
+}: Readonly<{ message: string; onRetry: () => void }>) {
+  return (
+    <div className="flex flex-col gap-4 p-6">
+      <Link
+        href="/admin/rewards/finance-docs"
+        className="text-sm text-zinc-500 hover:text-zinc-300"
+      >
+        ← Finance Docs
+      </Link>
+      <p
+        className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+        role="alert"
+      >
+        {message}
+      </p>
+      <Button variant="outline" className="w-fit" onClick={onRetry}>
+        Retry
+      </Button>
+    </div>
+  );
+}
+
 export default function AdminFinanceDocDetailPage() {
   const params = useParams<{ docId: string }>();
   const docId = params.docId;
@@ -44,6 +96,8 @@ export default function AdminFinanceDocDetailPage() {
   );
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const retry = () => setRefreshKey((k) => k + 1);
+
   const loadAll = useCallback(
     async (cancelled: () => boolean) => {
       setLoadingDoc(true);
@@ -53,52 +107,46 @@ export default function AdminFinanceDocDetailPage() {
       setPaymentsError(null);
       setIssueRequestsError(null);
 
-      try {
-        const detail = await fetchFinanceDocDetail(docId);
-        if (cancelled()) return;
-        setDoc(detail);
-      } catch (err) {
-        if (cancelled()) return;
-        setDocError(rewardApiErrorMessage(err));
-        setDoc(null);
-      } finally {
-        if (!cancelled()) setLoadingDoc(false);
-      }
+      await loadWithCancel(
+        cancelled,
+        () => fetchFinanceDocDetail(docId),
+        setDoc,
+        (message) => {
+          setDocError(message);
+          setDoc(null);
+        },
+        () => setLoadingDoc(false),
+      );
 
-      try {
-        const paymentRows = await fetchFinancePayments(docId);
-        if (cancelled()) return;
-        setPayments(paymentRows);
-      } catch (err) {
-        if (cancelled()) return;
-        setPaymentsError(rewardApiErrorMessage(err));
-        setPayments([]);
-      } finally {
-        if (!cancelled()) setLoadingPayments(false);
-      }
+      await loadWithCancel(
+        cancelled,
+        () => fetchFinancePayments(docId),
+        setPayments,
+        (message) => {
+          setPaymentsError(message);
+          setPayments([]);
+        },
+        () => setLoadingPayments(false),
+      );
 
-      try {
-        const issueResult = await fetchIssueRequests({
-          docId,
-          page: 1,
-          size: 20,
-        });
-        if (cancelled()) return;
-        setIssueRequests(issueResult.rows);
-        setIssueRequestsTotal(issueResult.total);
-      } catch (err) {
-        if (cancelled()) return;
-        setIssueRequestsError(rewardApiErrorMessage(err));
-        setIssueRequests([]);
-        setIssueRequestsTotal(0);
-      } finally {
-        if (!cancelled()) setLoadingIssueRequests(false);
-      }
+      await loadWithCancel(
+        cancelled,
+        () => fetchIssueRequests({ docId, page: 1, size: 20 }),
+        (result) => {
+          setIssueRequests(result.rows);
+          setIssueRequestsTotal(result.total);
+        },
+        (message) => {
+          setIssueRequestsError(message);
+          setIssueRequests([]);
+          setIssueRequestsTotal(0);
+        },
+        () => setLoadingIssueRequests(false),
+      );
 
       try {
         const configs = await fetchPaymentConfigs();
-        if (cancelled()) return;
-        setPaymentConfigs(configs);
+        if (!cancelled()) setPaymentConfigs(configs);
       } catch {
         // Non-blocking for detail view
       }
@@ -114,37 +162,13 @@ export default function AdminFinanceDocDetailPage() {
     };
   }, [loadAll, refreshKey]);
 
-  if (loadingDoc) {
-    return (
-      <div className="p-6">
-        <p className="text-sm text-zinc-500">Loading finance doc…</p>
-      </div>
-    );
-  }
-
+  if (loadingDoc) return <FinanceDocLoadingState />;
   if (docError || !doc) {
     return (
-      <div className="flex flex-col gap-4 p-6">
-        <Link
-          href="/admin/rewards/finance-docs"
-          className="text-sm text-zinc-500 hover:text-zinc-300"
-        >
-          ← Finance Docs
-        </Link>
-        <p
-          className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
-          role="alert"
-        >
-          {docError ?? "Finance doc not found"}
-        </p>
-        <Button
-          variant="outline"
-          className="w-fit"
-          onClick={() => setRefreshKey((k) => k + 1)}
-        >
-          Retry
-        </Button>
-      </div>
+      <FinanceDocErrorState
+        message={docError ?? "Finance doc not found"}
+        onRetry={retry}
+      />
     );
   }
 
@@ -159,7 +183,7 @@ export default function AdminFinanceDocDetailPage() {
       loadingIssueRequests={loadingIssueRequests}
       errorPayments={paymentsError}
       errorIssueRequests={issueRequestsError}
-      onRefresh={() => setRefreshKey((k) => k + 1)}
+      onRefresh={retry}
     />
   );
 }

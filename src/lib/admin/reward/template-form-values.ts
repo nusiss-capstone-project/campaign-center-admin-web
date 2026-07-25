@@ -76,8 +76,10 @@ function pickConfigString(
 ): string {
   for (const key of keys) {
     const value = record[key];
-    if (value == null || value === "") continue;
-    return String(value);
+    if (typeof value === "string" && value !== "") return value;
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
   }
   return "";
 }
@@ -106,9 +108,7 @@ function configRecordFromUnknown(
 }
 
 export function parseTemplateType(raw: unknown): TemplateType {
-  const value = String(raw ?? "")
-    .trim()
-    .toUpperCase();
+  const value = typeof raw === "string" ? raw.trim().toUpperCase() : "";
   return value === "DYNAMIC" ? "DYNAMIC" : "FIXED";
 }
 

@@ -10,7 +10,7 @@ type ProjectsPageHeaderProps = {
   total: number;
 };
 
-export function ProjectsPageHeader({ total }: ProjectsPageHeaderProps) {
+export function ProjectsPageHeader({ total }: Readonly<ProjectsPageHeaderProps>) {
   const caps = useRewardCapabilities();
 
   return (

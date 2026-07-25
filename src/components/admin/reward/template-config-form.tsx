@@ -46,7 +46,7 @@ export function TemplateConfigForm({
   paymentConfigs,
   configOnly = false,
   readOnly = false,
-}: TemplateConfigFormProps) {
+}: Readonly<TemplateConfigFormProps>) {
   const units = [
     ...new Set(
       paymentConfigs

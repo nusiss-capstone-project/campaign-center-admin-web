@@ -29,7 +29,27 @@ export function LandingPagesDashboard({
   statusFilter,
   onStatusFilterChange,
   onMutated,
-}: LandingPagesDashboardProps) {
+}: Readonly<LandingPagesDashboardProps>) {
+  function renderBody() {
+    if (loading) {
+      return <p className="text-sm text-zinc-500">Loading landing pages…</p>;
+    }
+    if (errorMessage) {
+      return (
+        <p
+          className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+          role="alert"
+        >
+          {errorMessage}
+        </p>
+      );
+    }
+    if (rows.length === 0) {
+      return <p className="text-sm text-zinc-500">No landing pages returned.</p>;
+    }
+    return <LandingPagesDataTable rows={rows} onMutated={onMutated} />;
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="border-b border-white/10 px-6 py-6 lg:px-8">
@@ -43,20 +63,7 @@ export function LandingPagesDashboard({
       </div>
 
       <div className="flex flex-1 flex-col px-6 py-6 lg:px-8">
-        {loading ? (
-          <p className="text-sm text-zinc-500">Loading landing pages…</p>
-        ) : errorMessage ? (
-          <p
-            className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
-            role="alert"
-          >
-            {errorMessage}
-          </p>
-        ) : rows.length === 0 ? (
-          <p className="text-sm text-zinc-500">No landing pages returned.</p>
-        ) : (
-          <LandingPagesDataTable rows={rows} onMutated={onMutated} />
-        )}
+        {renderBody()}
 
         {!loading && !errorMessage && rows.length > 0 ? (
           <p className="mt-6 text-xs text-zinc-500">

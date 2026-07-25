@@ -14,7 +14,7 @@ type ProjectsDataTableProps = {
   rows: ProjectDisplayRow[];
 };
 
-export function ProjectsDataTable({ rows }: ProjectsDataTableProps) {
+export function ProjectsDataTable({ rows }: Readonly<ProjectsDataTableProps>) {
   return (
     <div className="overflow-hidden rounded-xl">
       <Table className="border-0">

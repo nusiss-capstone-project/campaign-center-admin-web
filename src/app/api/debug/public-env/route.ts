@@ -20,10 +20,12 @@ export async function GET() {
     VERCEL_ENV: process.env.VERCEL_ENV,
   });
 
+  const ellipsis = raw.length > 32 ? "…" : "";
+
   return NextResponse.json({
     NEXT_PUBLIC_API_BASE_URL_defined: raw.length > 0,
     NEXT_PUBLIC_API_BASE_URL_length: raw.length,
-    NEXT_PUBLIC_API_BASE_URL_preview: raw ? `${raw.slice(0, 32)}${raw.length > 32 ? "…" : ""}` : "",
+    NEXT_PUBLIC_API_BASE_URL_preview: raw ? `${raw.slice(0, 32)}${ellipsis}` : "",
     VERCEL_ENV: process.env.VERCEL_ENV ?? null,
     NODE_ENV: process.env.NODE_ENV ?? null,
   });

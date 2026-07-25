@@ -30,7 +30,7 @@ const DEFAULT_SPEC = {
   dot: "bg-zinc-400",
 };
 
-export function RewardStatusBadge({ status }: { status: string }) {
+export function RewardStatusBadge({ status }: Readonly<{ status: string }>) {
   const key = status.trim().toUpperCase();
   const spec = SPECS[key] ?? DEFAULT_SPEC;
   const label = status.trim() || "—";

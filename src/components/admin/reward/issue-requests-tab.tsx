@@ -41,7 +41,7 @@ export function IssueRequestsTab({
   onSubmit,
   onApprove,
   onReject,
-}: IssueRequestsTabProps) {
+}: Readonly<IssueRequestsTabProps>) {
   const caps = useRewardCapabilities();
 
   if (loading) {

@@ -103,6 +103,38 @@ export default function AdminLandingPageDetailPage() {
   const canEdit = statusCode === 1 || statusCode === 2;
   const error = loadError ?? localeError;
 
+  function renderContent() {
+    if (loading) {
+      return <p className="text-sm text-zinc-500">Loading…</p>;
+    }
+    if (error) {
+      return (
+        <p className="text-sm text-red-400" role="alert">
+          {error}
+        </p>
+      );
+    }
+    return (
+      <div className="flex flex-col gap-4">
+        <LandingLanguagePanel
+          defaultLang={defaultLang}
+          selectedLang={selectedLang}
+          translatedLangs={translatedLangs}
+          onSelectedLangChange={setSelectedLang}
+        />
+        {notice ? (
+          <p className="text-sm text-emerald-300" role="status">
+            {notice}
+          </p>
+        ) : null}
+        {loadingLangDetail ? (
+          <p className="text-sm text-zinc-500">Loading language detail…</p>
+        ) : null}
+        <LandingDetailsForm values={values} readOnly statusLabel={statusLabel} />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -125,37 +157,7 @@ export default function AdminLandingPageDetailPage() {
             View landing page details
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {loading ? (
-            <p className="text-sm text-zinc-500">Loading…</p>
-          ) : error ? (
-            <p className="text-sm text-red-400" role="alert">
-              {error}
-            </p>
-          ) : (
-            <div className="flex flex-col gap-4">
-              <LandingLanguagePanel
-                defaultLang={defaultLang}
-                selectedLang={selectedLang}
-                translatedLangs={translatedLangs}
-                onSelectedLangChange={setSelectedLang}
-              />
-              {notice ? (
-                <p className="text-sm text-emerald-300" role="status">
-                  {notice}
-                </p>
-              ) : null}
-              {loadingLangDetail ? (
-                <p className="text-sm text-zinc-500">Loading language detail…</p>
-              ) : null}
-              <LandingDetailsForm
-                values={values}
-                readOnly
-                statusLabel={statusLabel}
-              />
-            </div>
-          )}
-        </CardContent>
+        <CardContent>{renderContent()}</CardContent>
         {!loading && !error ? (
           <CardFooter className="border-t border-white/10 bg-transparent">
             <Button variant="outline" asChild className="border-white/10">

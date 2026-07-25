@@ -23,7 +23,7 @@ export function FinancePaymentsTab({
   loading,
   errorMessage,
   onRetry,
-}: FinancePaymentsTabProps) {
+}: Readonly<FinancePaymentsTabProps>) {
   if (loading) {
     return <p className="text-sm text-zinc-500">Loading disbursements…</p>;
   }

@@ -14,7 +14,7 @@ export function ListPagination({
   total,
   onPageChange,
   disabled = false,
-}: ListPaginationProps) {
+}: Readonly<ListPaginationProps>) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const end = Math.min(page * pageSize, total);
