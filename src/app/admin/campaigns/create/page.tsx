@@ -42,6 +42,31 @@ function toIsoFromLocal(dtLocal: string): string {
   return Number.isNaN(d.getTime()) ? "" : d.toISOString();
 }
 
+function createCampaignErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) return `${err.status} ${err.statusText}`;
+  if (err instanceof Error) return err.message;
+  return "Create failed";
+}
+
+function createdCampaignId(data: unknown): number | null {
+  if (data == null || typeof data !== "object" || !("id" in data)) return null;
+  const id = (data as { id: unknown }).id;
+  return typeof id === "number" ? id : null;
+}
+
+function isCreateCampaignBodyComplete(body: api_CreateCampaignReq): boolean {
+  return Boolean(
+    body.name &&
+      body.type &&
+      body.targetMarket &&
+      body.targetUserSegment &&
+      body.registrationStartTime &&
+      body.registrationEndTime &&
+      body.campaignStartTime &&
+      body.campaignEndTime,
+  );
+}
+
 function AdminCreateCampaignPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -127,7 +152,7 @@ function AdminCreateCampaignPageInner() {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-    const landingIdTrim = landingPageId.trim();
+
     let body: api_CreateCampaignReq;
     try {
       body = {
@@ -165,46 +190,25 @@ function AdminCreateCampaignPageInner() {
       setSubmitting(false);
       return;
     }
+
+    const landingIdTrim = landingPageId.trim();
     if (landingIdTrim !== "") {
       const n = Number(landingIdTrim);
-      if (!Number.isNaN(n)) body.landingPageId = n;
+      if (Number.isFinite(n)) body.landingPageId = n;
     }
-    if (
-      !body.name ||
-      !body.type ||
-      !body.targetMarket ||
-      !body.targetUserSegment ||
-      !body.registrationStartTime ||
-      !body.registrationEndTime ||
-      !body.campaignStartTime ||
-      !body.campaignEndTime
-    ) {
+
+    if (!isCreateCampaignBodyComplete(body)) {
       setError("Fill required fields and valid date/time values.");
       setSubmitting(false);
       return;
     }
+
     try {
       const res = await AdminCampaignService.postAdminCampaigns(body);
-      const created =
-        res.data &&
-        typeof res.data === "object" &&
-        "id" in res.data &&
-        typeof (res.data as { id: unknown }).id === "number"
-          ? (res.data as { id: number }).id
-          : null;
-      if (created != null) {
-        router.push(`/admin/campaigns/${created}`);
-        return;
-      }
-      router.push("/admin/campaigns");
+      const created = createdCampaignId(res.data);
+      router.push(created != null ? `/admin/campaigns/${created}` : "/admin/campaigns");
     } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? `${err.status} ${err.statusText}`
-          : err instanceof Error
-            ? err.message
-            : "Create failed",
-      );
+      setError(createCampaignErrorMessage(err));
     } finally {
       setSubmitting(false);
     }

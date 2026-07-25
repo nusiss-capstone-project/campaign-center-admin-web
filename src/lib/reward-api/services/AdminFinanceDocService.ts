@@ -1,7 +1,6 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
 import type { data_ApproveFinanceDocRequest } from '../models/data_ApproveFinanceDocRequest';
 import type { data_BaseResponse } from '../models/data_BaseResponse';
 import type { data_CreateFinanceDocRequest } from '../models/data_CreateFinanceDocRequest';

@@ -1,7 +1,6 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
 import type { data_ApproveIssueRequestRequest } from '../models/data_ApproveIssueRequestRequest';
 import type { data_BaseResponse } from '../models/data_BaseResponse';
 import type { data_CreateIssueRequestRequest } from '../models/data_CreateIssueRequestRequest';

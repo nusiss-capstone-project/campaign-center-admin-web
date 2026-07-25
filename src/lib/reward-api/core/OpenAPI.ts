@@ -1,32 +1,16 @@
-/* generated using openapi-typescript-codegen -- do not edit */
-/* istanbul ignore file */
-/* tslint:disable */
-/* eslint-disable */
-import type { ApiRequestOptions } from './ApiRequestOptions';
+import type { OpenAPIConfig as SharedOpenAPIConfig } from "@/lib/api/core/OpenAPI";
 
-type Resolver<T> = (options: ApiRequestOptions) => Promise<T>;
-type Headers = Record<string, string>;
-
-export type OpenAPIConfig = {
-    BASE: string;
-    VERSION: string;
-    WITH_CREDENTIALS: boolean;
-    CREDENTIALS: 'include' | 'omit' | 'same-origin';
-    TOKEN?: string | Resolver<string> | undefined;
-    USERNAME?: string | Resolver<string> | undefined;
-    PASSWORD?: string | Resolver<string> | undefined;
-    HEADERS?: Headers | Resolver<Headers> | undefined;
-    ENCODE_PATH?: ((path: string) => string) | undefined;
-};
+/** Same shape as shared OpenAPIConfig; separate instance so reward-ms keeps its own BASE/TOKEN. */
+export type OpenAPIConfig = SharedOpenAPIConfig;
 
 export const OpenAPI: OpenAPIConfig = {
-    BASE: '',
-    VERSION: '',
-    WITH_CREDENTIALS: false,
-    CREDENTIALS: 'include',
-    TOKEN: undefined,
-    USERNAME: undefined,
-    PASSWORD: undefined,
-    HEADERS: undefined,
-    ENCODE_PATH: undefined,
+  BASE: "",
+  VERSION: "",
+  WITH_CREDENTIALS: false,
+  CREDENTIALS: "include",
+  TOKEN: undefined,
+  USERNAME: undefined,
+  PASSWORD: undefined,
+  HEADERS: undefined,
+  ENCODE_PATH: undefined,
 };

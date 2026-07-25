@@ -1,11 +1,2 @@
-/* generated using openapi-typescript-codegen -- do not edit */
-/* istanbul ignore file */
-/* tslint:disable */
-/* eslint-disable */
-export type ApiResult = {
-    readonly url: string;
-    readonly ok: boolean;
-    readonly status: number;
-    readonly statusText: string;
-    readonly body: any;
-};
+/* Re-export shared OpenAPI client runtime to avoid duplicating generated core. */
+export type { ApiResult } from "@/lib/api/core/ApiResult";
