@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { LucideIcon } from "lucide-react";
 import {
+  Gift,
   HelpCircle,
   LayoutDashboard,
   LayoutTemplate,
@@ -18,17 +20,139 @@ const NAV = [
   { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/admin/landing-pages", label: "Landing Pages", icon: LayoutTemplate },
   { href: "/admin/task-group", label: "Tasks", icon: ListTodo },
+  { href: "/admin/rewards/projects", label: "Reward Management", icon: Gift },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
 
+type RewardSection = "projects" | "finance-docs" | "templates";
+
+function rewardSectionFromPath(pathname: string): RewardSection | null {
+  if (pathname.startsWith("/admin/rewards/finance-docs")) return "finance-docs";
+  if (pathname.startsWith("/admin/rewards/templates")) return "templates";
+  if (pathname.startsWith("/admin/rewards")) return "projects";
+  return null;
+}
+
+const CAMPAIGN_PATH_PATTERN = /^\/admin\/campaigns\/(\d+)(?:\/|$)/;
+
 function campaignIdFromPath(pathname: string): string | null {
-  const m = pathname.match(/^\/admin\/campaigns\/(\d+)(?:\/|$)/);
+  const m = CAMPAIGN_PATH_PATTERN.exec(pathname);
   return m?.[1] ?? null;
+}
+
+function isNavActive(pathname: string, href: string): boolean {
+  if (href === "/admin") return pathname === "/admin";
+  if (href === "/admin/rewards/projects") {
+    return pathname.startsWith("/admin/rewards");
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function subLinkClass(active: boolean): string {
+  return cn(
+    "rounded-md px-2.5 py-2 text-xs font-medium transition-colors",
+    active
+      ? "bg-zinc-800 text-white"
+      : "text-zinc-500 hover:bg-zinc-900/60 hover:text-zinc-200",
+  );
+}
+
+function CampaignSubnav({
+  campaignId,
+  pathname,
+}: Readonly<{ campaignId: string; pathname: string }>) {
+  const detailHref = `/admin/campaigns/${campaignId}`;
+  const performanceHref = `${detailHref}/performance`;
+  const detailsActive =
+    pathname === detailHref || pathname === `${detailHref}/edit`;
+
+  return (
+    <div className="ml-4 flex flex-col gap-0.5 border-l border-white/10 py-1 pl-3">
+      <Link href={detailHref} className={subLinkClass(detailsActive)}>
+        Details
+      </Link>
+      <Link
+        href={performanceHref}
+        className={subLinkClass(pathname.startsWith(performanceHref))}
+      >
+        Performance
+      </Link>
+    </div>
+  );
+}
+
+function RewardSubnav({
+  rewardSection,
+}: Readonly<{ rewardSection: RewardSection }>) {
+  return (
+    <div className="ml-4 flex flex-col gap-0.5 border-l border-white/10 py-1 pl-3">
+      <Link
+        href="/admin/rewards/projects"
+        className={subLinkClass(rewardSection === "projects")}
+      >
+        Projects
+      </Link>
+      <Link
+        href="/admin/rewards/finance-docs"
+        className={subLinkClass(rewardSection === "finance-docs")}
+      >
+        Finance Docs
+      </Link>
+      <Link
+        href="/admin/rewards/templates"
+        className={subLinkClass(rewardSection === "templates")}
+      >
+        Templates
+      </Link>
+    </div>
+  );
+}
+
+function SidebarNavItem({
+  href,
+  label,
+  icon: Icon,
+  pathname,
+  campaignId,
+  rewardSection,
+}: Readonly<{
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  pathname: string;
+  campaignId: string | null;
+  rewardSection: RewardSection | null;
+}>) {
+  const active = isNavActive(pathname, href);
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <Link
+        href={href}
+        className={cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+          active
+            ? "bg-zinc-900 text-white"
+            : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-100",
+        )}
+      >
+        <Icon className="size-4 shrink-0 opacity-80" strokeWidth={1.75} />
+        {label}
+      </Link>
+      {href === "/admin/campaigns" && campaignId ? (
+        <CampaignSubnav campaignId={campaignId} pathname={pathname} />
+      ) : null}
+      {href === "/admin/rewards/projects" && rewardSection ? (
+        <RewardSubnav rewardSection={rewardSection} />
+      ) : null}
+    </div>
+  );
 }
 
 export function CampaignCenterSidebar() {
   const pathname = usePathname();
   const campaignId = campaignIdFromPath(pathname);
+  const rewardSection = rewardSectionFromPath(pathname);
 
   return (
     <aside className="flex w-[260px] shrink-0 flex-col border-r border-white/10 bg-black">
@@ -44,60 +168,17 @@ export function CampaignCenterSidebar() {
       </div>
 
       <nav className="flex flex-1 flex-col gap-0.5 p-3">
-        {NAV.map(({ href, label, icon: Icon }) => {
-          const active =
-            href === "/admin"
-              ? pathname === "/admin"
-              : pathname === href || pathname.startsWith(`${href}/`);
-          return (
-            <div key={href} className="flex flex-col gap-0.5">
-              <Link
-                href={href}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-zinc-900 text-white"
-                    : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-100",
-                )}
-              >
-                <Icon
-                  className="size-4 shrink-0 opacity-80"
-                  strokeWidth={1.75}
-                />
-                {label}
-              </Link>
-              {href === "/admin/campaigns" && campaignId ? (
-                <div className="ml-4 flex flex-col gap-0.5 border-l border-white/10 py-1 pl-3">
-                  <Link
-                    href={`/admin/campaigns/${campaignId}`}
-                    className={cn(
-                      "rounded-md px-2.5 py-2 text-xs font-medium transition-colors",
-                      pathname === `/admin/campaigns/${campaignId}` ||
-                        pathname === `/admin/campaigns/${campaignId}/edit`
-                        ? "bg-zinc-800 text-white"
-                        : "text-zinc-500 hover:bg-zinc-900/60 hover:text-zinc-200",
-                    )}
-                  >
-                    Details
-                  </Link>
-                  <Link
-                    href={`/admin/campaigns/${campaignId}/performance`}
-                    className={cn(
-                      "rounded-md px-2.5 py-2 text-xs font-medium transition-colors",
-                      pathname.startsWith(
-                        `/admin/campaigns/${campaignId}/performance`,
-                      )
-                        ? "bg-zinc-800 text-white"
-                        : "text-zinc-500 hover:bg-zinc-900/60 hover:text-zinc-200",
-                    )}
-                  >
-                    Performance
-                  </Link>
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
+        {NAV.map(({ href, label, icon }) => (
+          <SidebarNavItem
+            key={href}
+            href={href}
+            label={label}
+            icon={icon}
+            pathname={pathname}
+            campaignId={campaignId}
+            rewardSection={rewardSection}
+          />
+        ))}
       </nav>
 
       <div className="border-t border-white/10 p-3">

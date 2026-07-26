@@ -33,7 +33,7 @@ type CampaignParticipationsTabProps = {
 
 export function CampaignParticipationsTab({
   campaignId,
-}: CampaignParticipationsTabProps) {
+}: Readonly<CampaignParticipationsTabProps>) {
   const [userIdInput, setUserIdInput] = useState("");
   const [rewardStatus, setRewardStatus] = useState("all");
   const [appliedFilters, setAppliedFilters] = useState({
@@ -96,6 +96,18 @@ export function CampaignParticipationsTab({
     });
   }
 
+  function renderRows() {
+    if (loading) {
+      return <p className="text-sm text-zinc-500">Loading participations…</p>;
+    }
+    if (rows.length === 0) {
+      return (
+        <p className="text-sm text-zinc-500">No participation records found.</p>
+      );
+    }
+    return <ParticipationsDataTable rows={rows} />;
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-zinc-900/30 p-4">
@@ -142,13 +154,7 @@ export function CampaignParticipationsTab({
         </p>
       ) : null}
 
-      {loading ? (
-        <p className="text-sm text-zinc-500">Loading participations…</p>
-      ) : rows.length === 0 ? (
-        <p className="text-sm text-zinc-500">No participation records found.</p>
-      ) : (
-        <ParticipationsDataTable rows={rows} />
-      )}
+      {renderRows()}
 
       <ListPagination
         page={page}

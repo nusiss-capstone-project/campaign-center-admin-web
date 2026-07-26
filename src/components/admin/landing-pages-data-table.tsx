@@ -25,7 +25,7 @@ type LandingPagesDataTableProps = {
 export function LandingPagesDataTable({
   rows,
   onMutated,
-}: LandingPagesDataTableProps) {
+}: Readonly<LandingPagesDataTableProps>) {
   const [publishingId, setPublishingId] = useState<number | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
 

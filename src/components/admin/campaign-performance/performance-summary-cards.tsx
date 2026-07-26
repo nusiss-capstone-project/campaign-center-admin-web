@@ -16,11 +16,11 @@ function SummaryCard({
   title,
   value,
   hint,
-}: {
+}: Readonly<{
   title: string;
   value: string;
   hint?: string;
-}) {
+}>) {
   return (
     <Card className="border-white/10 bg-zinc-900/40 text-zinc-100 ring-white/10">
       <CardHeader className="pb-2">
@@ -41,7 +41,7 @@ function SummaryCard({
 export function PerformanceSummaryCards({
   summary,
   loading = false,
-}: PerformanceSummaryCardsProps) {
+}: Readonly<PerformanceSummaryCardsProps>) {
   if (loading) {
     return (
       <p className="text-sm text-zinc-500">Loading performance summary…</p>

@@ -27,7 +27,7 @@ export function LandingDetailsForm({
   statusLabel,
   defaultLangReadOnly = false,
   bannerReadOnly = false,
-}: LandingDetailsFormProps) {
+}: Readonly<LandingDetailsFormProps>) {
   const ro = readOnly;
   const set = (p: Partial<LandingPageFormValues>) => {
     if (!readOnly && onChange) onChange(patch(values, p));

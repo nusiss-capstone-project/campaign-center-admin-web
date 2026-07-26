@@ -26,10 +26,10 @@ const SPECS: Record<
 export function LandingPageStatusBadge({
   category,
   label,
-}: {
+}: Readonly<{
   category: LandingPageStatusCategory;
   label: string;
-}) {
+}>) {
   const spec = SPECS[category];
   return (
     <Badge

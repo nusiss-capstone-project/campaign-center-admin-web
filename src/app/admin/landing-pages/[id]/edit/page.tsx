@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { LandingDetailsForm } from "@/components/admin/landing-details-form";
-import { Badge } from "@/components/ui/badge";
+import { LandingLanguagePanel } from "@/components/admin/landing-language-panel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,17 +15,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { statusCodeToLabel } from "@/lib/admin/campaign-form-values";
 import {
   fetchLandingPageDetail,
-  fetchLandingPageLocaleDetail,
   fetchLandingPageTranslatedLangs,
   generateLandingPageTranslation,
   saveLandingPageTranslation,
@@ -37,39 +29,47 @@ import {
   pickLandingPageStatus,
   toLandingPageBody,
 } from "@/lib/admin/landing-page-form-values";
+import { isValidRouteId, parseRouteId } from "@/lib/admin/parse-route-id";
+import { useLandingLocaleSelection } from "@/lib/admin/use-landing-locale-selection";
 
-const LANGUAGE_OPTIONS = ["en", "zh-CN", "ja", "ko", "fr", "es"] as const;
+function applyLoadedLandingPage(
+  data: unknown,
+  setters: {
+    setRaw: (value: unknown) => void;
+    setDefaultValues: (value: ReturnType<typeof emptyLandingPageFormValues>) => void;
+    setDefaultLang: (value: string) => void;
+    setSelectedLang: (value: string) => void;
+  },
+) {
+  const parsed = parseLandingPageDetailToFormValues(data);
+  setters.setRaw(data);
+  setters.setDefaultValues(parsed);
+  setters.setDefaultLang(parsed.defaultLang);
+  setters.setSelectedLang(parsed.defaultLang);
+  return parsed;
+}
 
 export default function AdminLandingPageEditPage() {
   const params = useParams();
   const router = useRouter();
-  const idParam = params?.id;
-  const landingPageId =
-    typeof idParam === "string"
-      ? Number(idParam)
-      : Array.isArray(idParam)
-        ? Number(idParam[0])
-        : NaN;
+  const landingPageId = parseRouteId(params?.id);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [raw, setRaw] = useState<unknown>(null);
-  const [values, setValues] = useState(() => emptyLandingPageFormValues());
   const [defaultValues, setDefaultValues] = useState(() =>
     emptyLandingPageFormValues(),
   );
   const [defaultLang, setDefaultLang] = useState("en");
   const [selectedLang, setSelectedLang] = useState("en");
   const [translatedLangs, setTranslatedLangs] = useState<string[]>([]);
-  const [loadingLangDetail, setLoadingLangDetail] = useState(false);
   const [generatingTranslation, setGeneratingTranslation] = useState(false);
 
   useEffect(() => {
-    if (!Number.isFinite(landingPageId) || landingPageId <= 0) {
+    if (!isValidRouteId(landingPageId)) {
       setLoading(false);
-      setError("Invalid landing page id");
+      setLoadError("Invalid landing page id");
       return;
     }
 
@@ -77,7 +77,7 @@ export default function AdminLandingPageEditPage() {
 
     async function load() {
       setLoading(true);
-      setError(null);
+      setLoadError(null);
       try {
         const data = await fetchLandingPageDetail(landingPageId);
         if (cancelled) return;
@@ -86,28 +86,22 @@ export default function AdminLandingPageEditPage() {
           router.replace(`/admin/landing-pages/${landingPageId}`);
           return;
         }
+        applyLoadedLandingPage(data, {
+          setRaw,
+          setDefaultValues,
+          setDefaultLang,
+          setSelectedLang,
+        });
         if (code !== 1 && code !== 2) {
-          setError("Only draft or published landing pages can be edited.");
-          setRaw(data);
-          const parsed = parseLandingPageDetailToFormValues(data);
-          setValues(parsed);
-          setDefaultValues(parsed);
-          setDefaultLang(parsed.defaultLang);
-          setSelectedLang(parsed.defaultLang);
+          setLoadError("Only draft or published landing pages can be edited.");
           return;
         }
-        const parsed = parseLandingPageDetailToFormValues(data);
-        setRaw(data);
-        setValues(parsed);
-        setDefaultValues(parsed);
-        setDefaultLang(parsed.defaultLang);
-        setSelectedLang(parsed.defaultLang);
         const langs = await fetchLandingPageTranslatedLangs(landingPageId);
         if (cancelled) return;
         setTranslatedLangs(langs);
       } catch (e) {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : "Load failed");
+        setLoadError(e instanceof Error ? e.message : "Load failed");
         setRaw(null);
       } finally {
         if (!cancelled) setLoading(false);
@@ -115,83 +109,41 @@ export default function AdminLandingPageEditPage() {
     }
 
     void load();
-
     return () => {
       cancelled = true;
     };
   }, [landingPageId, router]);
 
+  const {
+    values,
+    setValues,
+    notice,
+    setNotice,
+    error: localeError,
+    setError: setLocaleError,
+    loadingLangDetail,
+  } = useLandingLocaleSelection({
+    landingPageId,
+    loading,
+    defaultLang,
+    selectedLang,
+    defaultValues,
+    translatedLangs,
+    missingTranslationNotice:
+      "No saved translation tag found for this language. Review or generate before saving.",
+    emptyTranslationNotice:
+      "No saved translation yet. Click Translate to generate a draft.",
+  });
+
   const statusCode = pickLandingPageStatus(raw);
   const statusLabel = statusCodeToLabel(statusCode);
   const canSubmit = statusCode === 1 || statusCode === 2;
   const editingDefault = selectedLang === defaultLang;
-
-  useEffect(() => {
-    if (!Number.isFinite(landingPageId) || landingPageId <= 0 || loading) {
-      return;
-    }
-
-    let cancelled = false;
-
-    async function loadSelectedLang() {
-      setNotice(null);
-      setError(null);
-      if (selectedLang === defaultLang) {
-        setValues(defaultValues);
-        return;
-      }
-      setLoadingLangDetail(true);
-      try {
-        const detail = await fetchLandingPageLocaleDetail(
-          landingPageId,
-          selectedLang,
-        );
-        if (cancelled) return;
-        if (detail) {
-          const parsed = parseLandingPageDetailToFormValues(detail);
-          setValues({
-            ...parsed,
-            defaultLang,
-            bannerImageUrl: parsed.bannerImageUrl || defaultValues.bannerImageUrl,
-          });
-          if (!translatedLangs.includes(selectedLang)) {
-            setNotice(
-              "No saved translation tag found for this language. Review or generate before saving.",
-            );
-          }
-        } else {
-          setValues({
-            ...defaultValues,
-            defaultLang,
-          });
-          setNotice("No saved translation yet. Click Translate to generate a draft.");
-        }
-      } catch (e) {
-        if (cancelled) return;
-        setValues({ ...defaultValues, defaultLang });
-        setError(e instanceof Error ? e.message : "Load language detail failed");
-      } finally {
-        if (!cancelled) setLoadingLangDetail(false);
-      }
-    }
-
-    void loadSelectedLang();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    defaultLang,
-    defaultValues,
-    landingPageId,
-    loading,
-    selectedLang,
-    translatedLangs,
-  ]);
+  const error = loadError ?? localeError;
 
   async function onGenerateTranslation() {
     if (editingDefault || !canSubmit) return;
-    setError(null);
+    setLocaleError(null);
     setNotice(null);
     setGeneratingTranslation(true);
     try {
@@ -217,7 +169,9 @@ export default function AdminLandingPageEditPage() {
       });
       setNotice("Translation generated. Please review and save.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Generate translation failed");
+      setLocaleError(
+        e instanceof Error ? e.message : "Generate translation failed",
+      );
     } finally {
       setGeneratingTranslation(false);
     }
@@ -226,7 +180,8 @@ export default function AdminLandingPageEditPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
-    setError(null);
+    setLocaleError(null);
+    setLoadError(null);
     setSaving(true);
     const payload = toLandingPageBody(values);
     if (
@@ -236,7 +191,7 @@ export default function AdminLandingPageEditPage() {
       !payload.description ||
       !payload.terms
     ) {
-      setError("All fields are required.");
+      setLocaleError("All fields are required.");
       setSaving(false);
       return;
     }
@@ -247,24 +202,26 @@ export default function AdminLandingPageEditPage() {
         setDefaultLang(payload.defaultLang);
         setSelectedLang(payload.defaultLang);
         router.push(`/admin/landing-pages/${landingPageId}`);
-      } else {
-        await saveLandingPageTranslation(landingPageId, selectedLang, {
-          title: values.title.trim(),
-          description: values.description.trim(),
-          terms: values.terms.trim(),
-          operator: "admin",
-        });
-        setTranslatedLangs((langs) =>
-          langs.includes(selectedLang) ? langs : [...langs, selectedLang],
-        );
-        setNotice("Translation saved.");
+        return;
       }
+      await saveLandingPageTranslation(landingPageId, selectedLang, {
+        title: values.title.trim(),
+        description: values.description.trim(),
+        terms: values.terms.trim(),
+        operator: "admin",
+      });
+      setTranslatedLangs((langs) =>
+        langs.includes(selectedLang) ? langs : [...langs, selectedLang],
+      );
+      setNotice("Translation saved.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
+      setLocaleError(err instanceof Error ? err.message : "Save failed");
     } finally {
       setSaving(false);
     }
   }
+
+  const submitLabel = editingDefault ? "Save changes" : "Save Translation";
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
@@ -287,51 +244,12 @@ export default function AdminLandingPageEditPage() {
               <p className="text-sm text-zinc-500">Loading…</p>
             ) : (
               <>
-                <div className="rounded-xl border border-white/10 bg-zinc-950/50 p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm text-zinc-400">
-                      Default language
-                    </span>
-                    <Badge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-300">
-                      {defaultLang}
-                    </Badge>
-                    <span className="ml-2 text-sm text-zinc-500">
-                      Translated:
-                    </span>
-                    {translatedLangs.length > 0 ? (
-                      translatedLangs.map((lang) => (
-                        <Badge
-                          key={lang}
-                          variant="outline"
-                          className="border-white/10 text-zinc-300"
-                        >
-                          {lang}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-sm text-zinc-600">None</span>
-                    )}
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap items-end gap-3">
-                    <label className="grid gap-1.5 text-sm">
-                      <span className="text-zinc-400">Selected language</span>
-                      <Select
-                        value={selectedLang}
-                        onValueChange={setSelectedLang}
-                      >
-                        <SelectTrigger className="h-9 w-40 border-white/10 bg-zinc-900/80">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {LANGUAGE_OPTIONS.map((lang) => (
-                            <SelectItem key={lang} value={lang}>
-                              {lang}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </label>
+                <LandingLanguagePanel
+                  defaultLang={defaultLang}
+                  selectedLang={selectedLang}
+                  translatedLangs={translatedLangs}
+                  onSelectedLangChange={setSelectedLang}
+                  action={
                     <Button
                       type="button"
                       variant="outline"
@@ -346,8 +264,8 @@ export default function AdminLandingPageEditPage() {
                     >
                       {generatingTranslation ? "Translating…" : "Translate"}
                     </Button>
-                  </div>
-                </div>
+                  }
+                />
                 {error ? (
                   <p className="text-sm text-red-400" role="alert">
                     {error}
@@ -381,11 +299,7 @@ export default function AdminLandingPageEditPage() {
               disabled={loading || saving || !canSubmit}
               className="border-0 bg-white text-black hover:bg-zinc-200"
             >
-              {saving
-                ? "Saving…"
-                : editingDefault
-                  ? "Save changes"
-                  : "Save Translation"}
+              {saving ? "Saving…" : submitLabel}
             </Button>
           </CardFooter>
         </form>

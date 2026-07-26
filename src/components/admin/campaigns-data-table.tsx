@@ -35,7 +35,7 @@ type CampaignsDataTableProps = {
 export function CampaignsDataTable({
   rows,
   onCampaignsMutated,
-}: CampaignsDataTableProps) {
+}: Readonly<CampaignsDataTableProps>) {
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
   const [publishingId, setPublishingId] = useState<number | null>(null);
   const [banner, setBanner] = useState<string | null>(null);

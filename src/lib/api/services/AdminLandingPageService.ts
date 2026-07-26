@@ -1,7 +1,6 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
 import type { api_GenerateLandingTranslationHTTPResponse } from '../models/api_GenerateLandingTranslationHTTPResponse';
 import type { api_GenerateLandingTranslationReq } from '../models/api_GenerateLandingTranslationReq';
 import type { api_LandingPageBody } from '../models/api_LandingPageBody';

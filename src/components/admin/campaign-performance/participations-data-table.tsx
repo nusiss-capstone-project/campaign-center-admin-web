@@ -19,7 +19,7 @@ type ParticipationsDataTableProps = {
 
 export function ParticipationsDataTable({
   rows,
-}: ParticipationsDataTableProps) {
+}: Readonly<ParticipationsDataTableProps>) {
   return (
     <div className="overflow-hidden rounded-xl">
       <Table className="border-0">

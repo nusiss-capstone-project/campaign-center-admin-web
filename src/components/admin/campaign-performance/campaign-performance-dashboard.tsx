@@ -16,7 +16,7 @@ type CampaignPerformanceDashboardProps = {
 export function CampaignPerformanceDashboard({
   campaignId,
   campaignTitle,
-}: CampaignPerformanceDashboardProps) {
+}: Readonly<CampaignPerformanceDashboardProps>) {
   const [tab, setTab] = useState<PerformanceTab>("performance");
 
   return (

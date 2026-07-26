@@ -17,7 +17,7 @@ type PerformanceDailyTableProps = {
 export function PerformanceDailyTable({
   rows,
   loading = false,
-}: PerformanceDailyTableProps) {
+}: Readonly<PerformanceDailyTableProps>) {
   if (loading) {
     return <p className="text-sm text-zinc-500">Loading daily performance…</p>;
   }

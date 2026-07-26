@@ -1,7 +1,6 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
 import type { api_CreateCampaignReq } from '../models/api_CreateCampaignReq';
 import type { api_PublishOperatorReq } from '../models/api_PublishOperatorReq';
 import type { api_UpdateCampaignReq } from '../models/api_UpdateCampaignReq';

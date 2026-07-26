@@ -26,10 +26,10 @@ const SPECS: Record<
 export function CampaignStatusBadge({
   category,
   label,
-}: {
+}: Readonly<{
   category: CampaignStatusCategory;
   label: string;
-}) {
+}>) {
   const spec = SPECS[category];
   return (
     <Badge
