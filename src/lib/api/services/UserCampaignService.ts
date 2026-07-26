@@ -1,35 +1,69 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-import type { api_SimulateTopUpReq } from '../models/api_SimulateTopUpReq';
 import type { data_StandardResponse } from '../models/data_StandardResponse';
+import type { data_WebCampaignLandingPageData } from '../models/data_WebCampaignLandingPageData';
+import type { data_WebCampaignListData } from '../models/data_WebCampaignListData';
+import type { data_WebDepositData } from '../models/data_WebDepositData';
+import type { data_WebDepositReq } from '../models/data_WebDepositReq';
+import type { data_WebJoinCampaignData } from '../models/data_WebJoinCampaignData';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class UserCampaignService {
     /**
-     * List available campaigns (user)
-     * @returns data_StandardResponse success
+     * List available campaigns (user, mock)
+     * @returns any success
      * @throws ApiError
      */
-    public static getWebCampaigns(): CancelablePromise<data_StandardResponse> {
+    public static getWebCampaigns(): CancelablePromise<(data_StandardResponse & {
+        data?: data_WebCampaignListData;
+    })> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/web/campaigns',
             errors: {
-                503: `database unavailable`,
+                401: `unauthorized`,
             },
         });
     }
     /**
-     * Join campaign (user)
+     * Deposit for campaign task (user, mock)
      * @param campaignId Campaign ID
-     * @returns data_StandardResponse success or business error code in body
+     * @param body Deposit amount
+     * @returns any success
+     * @throws ApiError
+     */
+    public static postWebCampaignsDeposit(
+        campaignId: number,
+        body: data_WebDepositReq,
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: data_WebDepositData;
+    })> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/web/campaigns/{campaignId}/deposit',
+            path: {
+                'campaignId': campaignId,
+            },
+            body: body,
+            errors: {
+                400: `bad request`,
+                401: `unauthorized`,
+            },
+        });
+    }
+    /**
+     * Join campaign (user, mock)
+     * @param campaignId Campaign ID
+     * @returns any success
      * @throws ApiError
      */
     public static postWebCampaignsJoin(
         campaignId: number,
-    ): CancelablePromise<data_StandardResponse> {
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: data_WebJoinCampaignData;
+    })> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/web/campaigns/{campaignId}/join',
@@ -38,21 +72,23 @@ export class UserCampaignService {
             },
             errors: {
                 400: `bad request`,
-                503: `database unavailable`,
+                401: `unauthorized`,
             },
         });
     }
     /**
-     * Get campaign landing page (user)
+     * Get campaign landing page (user, mock)
      * @param campaignId Campaign ID
-     * @param lang Preferred language; falls back to default
-     * @returns data_StandardResponse success
+     * @param lang Preferred language; default en
+     * @returns any success
      * @throws ApiError
      */
     public static getWebCampaignsLandingPage(
         campaignId: number,
         lang?: string,
-    ): CancelablePromise<data_StandardResponse> {
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: data_WebCampaignLandingPageData;
+    })> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/web/campaigns/{campaignId}/landing-page',
@@ -63,32 +99,8 @@ export class UserCampaignService {
                 'lang': lang,
             },
             errors: {
-                404: `not found`,
-                503: `database unavailable`,
-            },
-        });
-    }
-    /**
-     * Simulate top-up with account recharge (user)
-     * @param campaignId Campaign ID
-     * @param body Top-up amount
-     * @returns data_StandardResponse success, manual review, or business error code
-     * @throws ApiError
-     */
-    public static postWebCampaignsTopUp(
-        campaignId: number,
-        body: api_SimulateTopUpReq,
-    ): CancelablePromise<data_StandardResponse> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/web/campaigns/{campaignId}/top-up',
-            path: {
-                'campaignId': campaignId,
-            },
-            body: body,
-            errors: {
                 400: `bad request`,
-                503: `database unavailable`,
+                401: `unauthorized`,
             },
         });
     }

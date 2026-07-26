@@ -4,7 +4,22 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import type { api_UpdateCampaignReq } from "@/lib/api/models/api_UpdateCampaignReq";
+import type { data_CampaignVO } from "@/lib/api/models/data_CampaignVO";
+import {
+  fetchCampaignDetail,
+  publishCampaign,
+  saveCampaignVersion,
+} from "@/lib/admin/campaign-admin-fetch";
+import {
+  emptyCampaignFormValues,
+  parseCampaignDetailToFormValues,
+  pickCampaignStatus,
+  pickCampaignVersion,
+  statusCodeToLabel,
+  toCampaignVOPayload,
+  type CampaignFormValues,
+} from "@/lib/admin/campaign-form-values";
+import { parseRouteId } from "@/lib/admin/parse-route-id";
 import { CampaignDetailsForm } from "@/components/admin/campaign-details-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,61 +30,28 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  fetchCampaignDetail,
-  updateCampaign,
-} from "@/lib/admin/campaign-admin-fetch";
-import type { CampaignFormValues } from "@/lib/admin/campaign-form-values";
-import {
-  emptyCampaignFormValues,
-  localDatetimeToIso,
-  parseCampaignDetailToFormValues,
-  pickCampaignStatus,
-  statusCodeToLabel,
-  toRewardRulesPayload,
-} from "@/lib/admin/campaign-form-values";
 
-function toUpdatePayload(v: CampaignFormValues): api_UpdateCampaignReq {
-  const landingTrim = v.landingPageId.trim();
-  const body: api_UpdateCampaignReq = {
-    name: v.name.trim(),
-    type: v.type.trim(),
-    targetMarket: v.targetMarket.trim(),
-    targetUserSegment: v.targetUserSegment.trim(),
-    registrationStartTime: localDatetimeToIso(v.registrationStartTime),
-    registrationEndTime: localDatetimeToIso(v.registrationEndTime),
-    campaignStartTime: localDatetimeToIso(v.campaignStartTime),
-    campaignEndTime: localDatetimeToIso(v.campaignEndTime),
-    rewardRules: toRewardRulesPayload(v),
-  };
-  if (landingTrim !== "") {
-    const n = Number(landingTrim);
-    if (!Number.isNaN(n)) body.landingPageId = n;
-  }
-  return body;
-}
-
-export default function AdminCampaignEditPage() {
-  const params = useParams();
+export default function AdminEditCampaignPage() {
   const router = useRouter();
-  const idParam = params?.id;
-  const campaignId =
-    typeof idParam === "string"
-      ? Number(idParam)
-      : Array.isArray(idParam)
-        ? Number(idParam[0])
-        : NaN;
+  const params = useParams();
+  const campaignId = parseRouteId(params.id);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [raw, setRaw] = useState<unknown>(null);
-  const [values, setValues] = useState(() => emptyCampaignFormValues());
+  const [raw, setRaw] = useState<data_CampaignVO | null>(null);
+  const [values, setValues] = useState<CampaignFormValues>(
+    emptyCampaignFormValues(),
+  );
+  const [version, setVersion] = useState<number | null>(null);
+  const [hasSaved, setHasSaved] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     if (!Number.isFinite(campaignId) || campaignId <= 0) {
-      setLoading(false);
       setError("Invalid campaign id");
+      setLoading(false);
       return;
     }
 
@@ -78,22 +60,20 @@ export default function AdminCampaignEditPage() {
     async function load() {
       setLoading(true);
       setError(null);
+      setHasSaved(false);
+      setDirty(false);
       try {
-        const data = await fetchCampaignDetail(campaignId);
+        const detail = await fetchCampaignDetail(campaignId);
         if (cancelled) return;
-        const code = pickCampaignStatus(data);
-        if (code === 3) {
-          router.replace(`/admin/campaigns/${campaignId}`);
-          return;
+
+        const ver = pickCampaignVersion(detail);
+        if (ver == null) {
+          throw new Error("Campaign version missing from detail");
         }
-        if (code !== 1 && code !== 2) {
-          setError("Only draft or published campaigns can be edited.");
-          setRaw(data);
-          setValues(parseCampaignDetailToFormValues(data));
-          return;
-        }
-        setRaw(data);
-        setValues(parseCampaignDetailToFormValues(data));
+
+        setRaw(detail);
+        setVersion(ver);
+        setValues(parseCampaignDetailToFormValues(detail));
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : "Load failed");
@@ -104,45 +84,48 @@ export default function AdminCampaignEditPage() {
     }
 
     void load();
-
     return () => {
       cancelled = true;
     };
-  }, [campaignId, router]);
+  }, [campaignId]);
 
   const statusCode = pickCampaignStatus(raw);
   const statusLabel = statusCodeToLabel(statusCode);
-  const canSubmit = statusCode === 1 || statusCode === 2;
+  const canEdit = version != null && !loading;
+  const canPublish =
+    canEdit && hasSaved && !dirty && !saving && !publishing;
 
-  async function onSubmit(e: React.FormEvent) {
+  function onFormChange(next: CampaignFormValues) {
+    setValues(next);
+    setDirty(true);
+  }
+
+  async function onSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit) return;
-    setError(null);
+    if (version == null) {
+      setError("Missing version");
+      return;
+    }
     setSaving(true);
-    let payload: api_UpdateCampaignReq;
+    setError(null);
     try {
-      payload = toUpdatePayload(values);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid reward rules.");
-      setSaving(false);
-      return;
-    }
-    if (
-      !payload.name ||
-      !payload.targetMarket ||
-      !payload.targetUserSegment ||
-      !payload.registrationStartTime ||
-      !payload.registrationEndTime ||
-      !payload.campaignStartTime ||
-      !payload.campaignEndTime
-    ) {
-      setError("Fill required fields and valid date/time values.");
-      setSaving(false);
-      return;
-    }
-    try {
-      await updateCampaign(campaignId, payload);
-      router.push(`/admin/campaigns/${campaignId}`);
+      const payload = toCampaignVOPayload(values, {
+        id: campaignId,
+        version,
+        status: statusCode ?? 1,
+      });
+      const saved = await saveCampaignVersion(campaignId, version, payload);
+      // Save responses are often empty / partial — do not re-parse them into
+      // the form or fields will clear. Keep the submitted values.
+      const nextRaw = {
+        ...payload,
+        ...(saved && typeof saved === "object" ? saved : {}),
+      };
+      setRaw(nextRaw);
+      const ver = pickCampaignVersion(nextRaw) ?? version;
+      setVersion(ver);
+      setHasSaved(true);
+      setDirty(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");
     } finally {
@@ -150,52 +133,105 @@ export default function AdminCampaignEditPage() {
     }
   }
 
+  async function onPublish() {
+    if (version == null || !hasSaved || dirty) {
+      setError("Save the draft before publishing.");
+      return;
+    }
+    setPublishing(true);
+    setError(null);
+    try {
+      await publishCampaign(campaignId);
+      router.push(`/admin/campaigns/${campaignId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Publish failed");
+      setPublishing(false);
+    }
+  }
+
+  function renderContent() {
+    if (loading) {
+      return <p className="text-sm text-zinc-500">Loading…</p>;
+    }
+    if (!canEdit && !loading) {
+      return (
+        <p className="text-sm text-amber-300" role="status">
+          This campaign is not editable in its current state.
+        </p>
+      );
+    }
+    return (
+      <>
+        {error ? (
+          <p className="mb-4 text-sm text-red-400" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <CampaignDetailsForm
+          values={values}
+          readOnly={false}
+          onChange={onFormChange}
+          statusLabel={statusLabel}
+          versionLabel={version != null ? String(version) : null}
+        />
+      </>
+    );
+  }
+
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-6 lg:px-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button variant="outline" asChild className="border-white/10 bg-zinc-900/50">
-          <Link href={`/admin/campaigns/${campaignId}`}>← Details</Link>
+        <Button
+          variant="outline"
+          asChild
+          className="border-white/10 bg-zinc-900/50"
+        >
+          <Link href={`/admin/campaigns/${campaignId}`}>← Detail</Link>
         </Button>
       </div>
 
       <Card className="border-white/10 bg-zinc-900/40 text-zinc-100 ring-white/10">
         <CardHeader>
-          <CardTitle className="text-white">Edit campaign</CardTitle>
+          <CardTitle className="text-white">Edit campaign version</CardTitle>
           <CardDescription className="text-zinc-500">
-            Update fields and save (draft or published only)
+            Save draft content, then publish when ready. Publish stays disabled
+            until you save at least once in this session.
           </CardDescription>
         </CardHeader>
-        <form onSubmit={onSubmit}>
-          <CardContent className="flex flex-col gap-4">
-            {loading ? (
-              <p className="text-sm text-zinc-500">Loading…</p>
-            ) : (
-              <>
-                {error ? (
-                  <p className="text-sm text-red-400" role="alert">
-                    {error}
-                  </p>
-                ) : null}
-                <CampaignDetailsForm
-                  values={values}
-                  readOnly={!canSubmit}
-                  onChange={setValues}
-                  statusLabel={statusLabel}
-                />
-              </>
-            )}
-          </CardContent>
+        <form onSubmit={(e) => void onSave(e)}>
+          <CardContent>{renderContent()}</CardContent>
           <CardFooter className="flex flex-wrap justify-between gap-3 border-t border-white/10 bg-transparent">
-            <Button variant="outline" type="button" asChild className="border-white/10">
+            <Button
+              variant="outline"
+              type="button"
+              asChild
+              className="border-white/10"
+            >
               <Link href={`/admin/campaigns/${campaignId}`}>Cancel</Link>
             </Button>
-            <Button
-              type="submit"
-              disabled={loading || saving || !canSubmit}
-              className="border-0 bg-white text-black hover:bg-zinc-200"
-            >
-              {saving ? "Saving…" : "Save changes"}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="submit"
+                disabled={loading || saving || publishing || !canEdit}
+                variant="outline"
+                className="border-white/10"
+              >
+                {saving ? "Saving…" : "Save draft"}
+              </Button>
+              <Button
+                type="button"
+                disabled={!canPublish}
+                title={
+                  !hasSaved || dirty
+                    ? "Save the draft before publishing"
+                    : undefined
+                }
+                className="border-0 bg-white text-black hover:bg-zinc-200 disabled:opacity-40"
+                onClick={() => void onPublish()}
+              >
+                {publishing ? "Publishing…" : "Publish"}
+              </Button>
+            </div>
           </CardFooter>
         </form>
       </Card>

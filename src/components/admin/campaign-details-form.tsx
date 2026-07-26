@@ -1,6 +1,23 @@
 "use client";
 
+import { useEffect, useId, useState, type ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
+
 import type { CampaignFormValues } from "@/lib/admin/campaign-form-values";
+import {
+  CAMPAIGN_MARKET_SUGGESTIONS,
+  TIMEZONE_OPTIONS,
+} from "@/lib/admin/campaign-options";
+import { fetchTaskGroups, fetchTasksByGroup } from "@/lib/admin/task-admin-fetch";
+import { fetchPublishedLandingPages } from "@/lib/admin/landing-pages-fetch";
+import type { LandingPageDisplayRow } from "@/lib/admin/landing-page-row";
+import {
+  fetchProjects,
+  fetchTemplates,
+} from "@/lib/admin/reward/reward-api";
+import type { ProjectDisplayRow } from "@/lib/admin/reward/reward-row";
+import type { TemplateDisplayRow } from "@/lib/admin/reward/reward-row";
+import type { TaskGroupVO, TaskVO } from "@/lib/admin/task-types";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -9,25 +26,75 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  CAMPAIGN_MARKET_OPTIONS,
-  CAMPAIGN_TYPE_OPTIONS,
-  REWARD_TYPE_OPTIONS,
-  USER_SEGMENT_OPTIONS,
-} from "@/lib/admin/campaign-options";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const NONE = "__none__";
+
+function FormSection({
+  title,
+  description,
+  children,
+  defaultOpen = true,
+}: Readonly<{
+  title: string;
+  description?: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}>) {
+  const [open, setOpen] = useState(defaultOpen);
+  const panelId = useId();
+
+  return (
+    <section className="rounded-xl border border-white/10 bg-zinc-950/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-start gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.03]"
+      >
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-semibold tracking-wide text-white">
+            {title}
+          </h3>
+          {description ? (
+            <p className="mt-1 text-xs text-zinc-500">{description}</p>
+          ) : null}
+        </div>
+        <ChevronDown
+          className={cn(
+            "mt-0.5 size-4 shrink-0 text-zinc-400 transition-transform duration-200",
+            open ? "rotate-0" : "-rotate-90",
+          )}
+          aria-hidden
+        />
+      </button>
+      {open ? (
+        <div
+          id={panelId}
+          className="flex flex-col gap-4 border-t border-white/10 px-5 py-4"
+        >
+          {children}
+        </div>
+      ) : null}
+    </section>
+  );
+}
 
 type CampaignDetailsFormProps = {
   values: CampaignFormValues;
   readOnly: boolean;
   onChange?: (next: CampaignFormValues) => void;
   statusLabel?: string | null;
+  versionLabel?: string | null;
 };
 
 function patch(
   prev: CampaignFormValues,
-  patch: Partial<CampaignFormValues>,
+  next: Partial<CampaignFormValues>,
 ): CampaignFormValues {
-  return { ...prev, ...patch };
+  return { ...prev, ...next };
 }
 
 export function CampaignDetailsForm({
@@ -35,273 +102,499 @@ export function CampaignDetailsForm({
   readOnly,
   onChange,
   statusLabel,
+  versionLabel,
 }: Readonly<CampaignDetailsFormProps>) {
   const ro = readOnly;
   const set = (p: Partial<CampaignFormValues>) => {
     if (!readOnly && onChange) onChange(patch(values, p));
   };
-  const isPercentageReward = values.rewardMode === "PERCENTAGE";
+
+  const [projects, setProjects] = useState<ProjectDisplayRow[]>([]);
+  const [templates, setTemplates] = useState<TemplateDisplayRow[]>([]);
+  const [taskGroups, setTaskGroups] = useState<TaskGroupVO[]>([]);
+  const [landingPages, setLandingPages] = useState<LandingPageDisplayRow[]>([]);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [loadingImports, setLoadingImports] = useState(false);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+
+  useEffect(() => {
+    if (ro) return;
+    let cancelled = false;
+    async function load() {
+      setLoadingImports(true);
+      setImportError(null);
+      try {
+        const [projectPage, templatePage, groups, publishedLandings] =
+          await Promise.all([
+            fetchProjects({ page: 1, size: 100 }),
+            fetchTemplates({ page: 1, size: 100 }),
+            fetchTaskGroups(),
+            fetchPublishedLandingPages({ page: 1, pageSize: 100 }),
+          ]);
+        if (cancelled) return;
+        setProjects(projectPage.rows);
+        setTemplates(templatePage.rows);
+        setTaskGroups(groups);
+        setLandingPages(publishedLandings);
+      } catch (e) {
+        if (cancelled) return;
+        setImportError(
+          e instanceof Error ? e.message : "Failed to load import lists",
+        );
+      } finally {
+        if (!cancelled) setLoadingImports(false);
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [ro]);
+
+  async function onSelectTaskGroup(taskGroupId: string) {
+    if (ro) return;
+    if (!taskGroupId || taskGroupId === NONE) {
+      set({
+        taskGroupId: "",
+        taskGroupRewardTemplateId: "",
+        taskRewardItems: [],
+      });
+      return;
+    }
+    set({ taskGroupId });
+    setLoadingTasks(true);
+    setImportError(null);
+    try {
+      const tasks = await fetchTasksByGroup(Number(taskGroupId));
+      const items = tasks.map((task: TaskVO) => {
+        const existing = values.taskRewardItems.find(
+          (row) => row.taskId === String(task.id ?? ""),
+        );
+        return {
+          taskId: task.id != null ? String(task.id) : "",
+          taskName: task.name ?? "",
+          rewardTemplateId: existing?.rewardTemplateId ?? "",
+          rewardTemplateName: existing?.rewardTemplateName ?? "",
+        };
+      });
+      set({ taskGroupId, taskRewardItems: items });
+    } catch (e) {
+      setImportError(
+        e instanceof Error ? e.message : "Failed to load tasks for group",
+      );
+    } finally {
+      setLoadingTasks(false);
+    }
+  }
+
+  function onSelectBudget(projectId: string) {
+    if (projectId === NONE) {
+      set({ budgetProjectId: "", budgetProjectName: "" });
+      return;
+    }
+    const project = projects.find((p) => String(p.id) === projectId);
+    set({
+      budgetProjectId: projectId,
+      budgetProjectName: project?.name ?? values.budgetProjectName,
+    });
+  }
+
+  function onSelectLandingPage(landingPageId: string) {
+    set({
+      landingPageId: landingPageId === NONE ? "" : landingPageId,
+    });
+  }
+
+  function onSelectTaskTemplate(taskId: string, templateId: string) {
+    const template =
+      templateId === NONE
+        ? null
+        : templates.find((t) => String(t.id) === templateId);
+    set({
+      taskRewardItems: values.taskRewardItems.map((row) =>
+        row.taskId === taskId
+          ? {
+              ...row,
+              rewardTemplateId: templateId === NONE ? "" : templateId,
+              rewardTemplateName: template
+                ? `${template.typeLabel} · ${template.voucherType || template.unit}`
+                : "",
+            }
+          : row,
+      ),
+    });
+  }
+
+  function onSelectGroupReward(templateId: string) {
+    set({
+      taskGroupRewardTemplateId: templateId === NONE ? "" : templateId,
+    });
+  }
+
+  const fieldClass =
+    "w-full border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70";
+  const selectTriggerClass = `${fieldClass} min-w-0 justify-between`;
+  const selectContentClass =
+    "w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)] max-w-[min(100vw-2rem,40rem)]";
 
   return (
-    <div className="flex flex-col gap-4">
-      {statusLabel != null && statusLabel !== "" ? (
-        <p className="text-sm text-zinc-400">
-          Status: <span className="text-zinc-100">{statusLabel}</span>
-        </p>
-      ) : null}
-      <label className="grid gap-1.5 text-sm">
-        <span className="text-zinc-400">Name</span>
-        <Input
-          value={values.name}
-          onChange={(e) => set({ name: e.target.value })}
-          disabled={ro}
-          readOnly={ro}
-          required={!ro}
-          className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
-        />
-      </label>
-      <label className="grid gap-1.5 text-sm">
-        <span className="text-zinc-400">Type</span>
-        <Select
-          value={values.type}
-          disabled={ro}
-          onValueChange={(type) => set({ type })}
-        >
-          <SelectTrigger className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70">
-            <SelectValue placeholder="Select campaign type" />
-          </SelectTrigger>
-          <SelectContent>
-            {CAMPAIGN_TYPE_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
+    <div className="flex flex-col gap-5">
+      {(statusLabel || versionLabel) && (
+        <div className="flex flex-wrap gap-4 rounded-xl border border-white/10 bg-zinc-950/40 px-5 py-3 text-sm text-zinc-400">
+          {statusLabel ? (
+            <p>
+              Status: <span className="text-zinc-100">{statusLabel}</span>
+            </p>
+          ) : null}
+          {versionLabel ? (
+            <p>
+              Version: <span className="text-zinc-100">{versionLabel}</span>
+            </p>
+          ) : null}
+        </div>
+      )}
+
+      <FormSection title="Basics">
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-zinc-400">Name</span>
+          {ro ? (
+            <p className="rounded-lg border border-white/10 bg-zinc-900/80 px-2.5 py-1.5 text-sm text-zinc-100">
+              {values.name.trim() ? values.name : "—"}
+            </p>
+          ) : (
+            <Input
+              value={values.name}
+              onChange={(e) => set({ name: e.target.value })}
+              required
+              className={fieldClass}
+            />
+          )}
+        </label>
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-zinc-400">Market</span>
+          <Input
+            list="campaign-market-suggestions"
+            value={values.market}
+            onChange={(e) => set({ market: e.target.value })}
+            disabled={ro}
+            readOnly={ro}
+            placeholder="e.g. SG"
+            className={fieldClass}
+          />
+          <datalist id="campaign-market-suggestions">
+            {CAMPAIGN_MARKET_SUGGESTIONS.map((m) => (
+              <option key={m} value={m} />
             ))}
-          </SelectContent>
-        </Select>
-      </label>
-      <label className="grid gap-1.5 text-sm">
-        <span className="text-zinc-400">Target market</span>
-        <Select
-          value={values.targetMarket}
-          disabled={ro}
-          onValueChange={(targetMarket) => set({ targetMarket })}
-        >
-          <SelectTrigger className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70">
-            <SelectValue placeholder="Select target market" />
-          </SelectTrigger>
-          <SelectContent>
-            {CAMPAIGN_MARKET_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </label>
-      <label className="grid gap-1.5 text-sm">
-        <span className="text-zinc-400">Target user segment</span>
-        <Select
-          value={values.targetUserSegment}
-          disabled={ro}
-          onValueChange={(targetUserSegment) => set({ targetUserSegment })}
-        >
-          <SelectTrigger className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70">
-            <SelectValue placeholder="Select user segment" />
-          </SelectTrigger>
-          <SelectContent>
-            {USER_SEGMENT_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </label>
-      <label className="grid gap-1.5 text-sm">
-        <span className="text-zinc-400">Landing page ID (optional)</span>
-        <Input
-          inputMode="numeric"
-          value={values.landingPageId}
-          onChange={(e) => set({ landingPageId: e.target.value })}
-          disabled={ro}
-          readOnly={ro}
-          className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
-        />
-      </label>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="grid gap-1.5 text-sm">
-          <span className="text-zinc-400">Registration start</span>
-          <Input
-            type="datetime-local"
-            value={values.registrationStartTime}
-            onChange={(e) => set({ registrationStartTime: e.target.value })}
-            disabled={ro}
-            required={!ro}
-            className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
-          />
+          </datalist>
         </label>
         <label className="grid gap-1.5 text-sm">
-          <span className="text-zinc-400">Registration end</span>
-          <Input
-            type="datetime-local"
-            value={values.registrationEndTime}
-            onChange={(e) => set({ registrationEndTime: e.target.value })}
-            disabled={ro}
-            required={!ro}
-            className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
-          />
-        </label>
-        <label className="grid gap-1.5 text-sm">
-          <span className="text-zinc-400">Campaign start</span>
-          <Input
-            type="datetime-local"
-            value={values.campaignStartTime}
-            onChange={(e) => set({ campaignStartTime: e.target.value })}
-            disabled={ro}
-            required={!ro}
-            className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
-          />
-        </label>
-        <label className="grid gap-1.5 text-sm">
-          <span className="text-zinc-400">Campaign end</span>
-          <Input
-            type="datetime-local"
-            value={values.campaignEndTime}
-            onChange={(e) => set({ campaignEndTime: e.target.value })}
-            disabled={ro}
-            required={!ro}
-            className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
-          />
-        </label>
-      </div>
-      <div className="border-t border-white/10 pt-4">
-        <p className="mb-3 text-sm font-medium text-zinc-200">Reward rules</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-1.5 text-sm">
-            <span className="text-zinc-400">Reward type</span>
+          <span className="text-zinc-400">Time zone</span>
+          {ro ? (
+            <Input value={values.timeZone} readOnly disabled className={fieldClass} />
+          ) : (
             <Select
-              value={values.rewardType}
-              disabled={ro}
-              onValueChange={(rewardType) => set({ rewardType })}
+              value={values.timeZone || TIMEZONE_OPTIONS[0].value}
+              onValueChange={(timeZone) => set({ timeZone })}
             >
-              <SelectTrigger className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70">
-                <SelectValue placeholder="Select reward type" />
+              <SelectTrigger className={selectTriggerClass}>
+                <SelectValue placeholder="Select time zone" />
               </SelectTrigger>
-              <SelectContent>
-                {REWARD_TYPE_OPTIONS.map((option) => (
+              <SelectContent position="popper" className={selectContentClass}>
+                {TIMEZONE_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </label>
+          )}
+        </label>
+        <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-1.5 text-sm">
-            <span className="text-zinc-400">Reward mode</span>
-            <Select
-              value={values.rewardMode}
-              onValueChange={(rewardMode) => set({ rewardMode })}
-              disabled={ro}
-            >
-              <SelectTrigger className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70">
-                <SelectValue placeholder="Select reward mode" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="FIXED_AMOUNT">Fixed amount</SelectItem>
-                <SelectItem value="PERCENTAGE">Percentage</SelectItem>
-              </SelectContent>
-            </Select>
-          </label>
-          <label className="grid gap-1.5 text-sm">
-            <span className="text-zinc-400">Reward currency</span>
+            <span className="text-zinc-400">Registration start</span>
             <Input
-              value={values.rewardCurrency}
-              onChange={(e) => set({ rewardCurrency: e.target.value })}
+              type="datetime-local"
+              value={values.registrationStartTime}
+              onChange={(e) => set({ registrationStartTime: e.target.value })}
               disabled={ro}
               readOnly={ro}
-              className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
-            />
-          </label>
-          {isPercentageReward ? (
-            <>
-              <label className="grid gap-1.5 text-sm">
-                <span className="text-zinc-400">Reward percentage</span>
-                <Input
-                  type="number"
-                  step="any"
-                  value={values.rewardPercentage}
-                  onChange={(e) => set({ rewardPercentage: e.target.value })}
-                  disabled={ro}
-                  required={!ro}
-                  className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
-                />
-              </label>
-              <label className="grid gap-1.5 text-sm">
-                <span className="text-zinc-400">Max reward amount</span>
-                <Input
-                  type="number"
-                  step="any"
-                  value={values.maxRewardAmount}
-                  onChange={(e) => set({ maxRewardAmount: e.target.value })}
-                  disabled={ro}
-                  className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
-                />
-              </label>
-            </>
-          ) : (
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-zinc-400">Reward amount</span>
-              <Input
-                type="number"
-                step="any"
-                value={values.rewardAmount}
-                onChange={(e) => set({ rewardAmount: e.target.value })}
-                disabled={ro}
-                required={!ro}
-                className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
-              />
-            </label>
-          )}
-          <label className="grid gap-1.5 text-sm">
-            <span className="text-zinc-400">Top-up threshold</span>
-            <Input
-              type="number"
-              step="any"
-              value={values.topupThreshold}
-              onChange={(e) => set({ topupThreshold: e.target.value })}
-              disabled={ro}
-              required={!ro}
-              className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
+              className={fieldClass}
             />
           </label>
           <label className="grid gap-1.5 text-sm">
-            <span className="text-zinc-400">Max claim per user</span>
+            <span className="text-zinc-400">Registration end</span>
             <Input
-              type="number"
-              min={0}
-              step={1}
-              value={values.maxClaimPerUser}
-              onChange={(e) => set({ maxClaimPerUser: e.target.value })}
+              type="datetime-local"
+              value={values.registrationEndTime}
+              onChange={(e) => set({ registrationEndTime: e.target.value })}
               disabled={ro}
-              required={!ro}
-              className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
+              readOnly={ro}
+              className={fieldClass}
             />
           </label>
           <label className="grid gap-1.5 text-sm">
-            <span className="text-zinc-400">Min obtain days</span>
+            <span className="text-zinc-400">Campaign start</span>
             <Input
-              type="number"
-              min={0}
-              step={1}
-              value={values.minObtainDays}
-              onChange={(e) => set({ minObtainDays: e.target.value })}
+              type="datetime-local"
+              value={values.campaignStartTime}
+              onChange={(e) => set({ campaignStartTime: e.target.value })}
               disabled={ro}
-              required={!ro}
-              className="border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70"
+              readOnly={ro}
+              className={fieldClass}
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-zinc-400">Campaign end</span>
+            <Input
+              type="datetime-local"
+              value={values.campaignEndTime}
+              onChange={(e) => set({ campaignEndTime: e.target.value })}
+              disabled={ro}
+              readOnly={ro}
+              className={fieldClass}
             />
           </label>
         </div>
-      </div>
+      </FormSection>
+
+      <FormSection
+        title="Target user group"
+        description="Manual entry for now. Identity service list will be wired later."
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-zinc-400">Group ID</span>
+            <Input
+              inputMode="numeric"
+              value={values.targetUserGroupId}
+              onChange={(e) => set({ targetUserGroupId: e.target.value })}
+              disabled={ro}
+              readOnly={ro}
+              className={fieldClass}
+            />
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-zinc-400">Group name</span>
+            <Input
+              value={values.targetUserGroupName}
+              onChange={(e) => set({ targetUserGroupName: e.target.value })}
+              disabled={ro}
+              readOnly={ro}
+              className={fieldClass}
+            />
+          </label>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Landing page"
+        description="Select a published landing page."
+      >
+        {ro ? (
+          <p className="text-sm text-zinc-300">
+            {values.landingPageId ? `#${values.landingPageId}` : "—"}
+          </p>
+        ) : (
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-zinc-400">Landing page</span>
+            <Select
+              value={values.landingPageId || NONE}
+              onValueChange={onSelectLandingPage}
+              disabled={loadingImports}
+            >
+              <SelectTrigger className={selectTriggerClass}>
+                <SelectValue placeholder="Select landing page" />
+              </SelectTrigger>
+              <SelectContent position="popper" className={selectContentClass}>
+                <SelectItem value={NONE}>None</SelectItem>
+                {landingPages.map((page) => (
+                  <SelectItem key={page.id} value={String(page.id)}>
+                    {page.title} (#{page.id}) · {page.language}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+        )}
+      </FormSection>
+
+      <FormSection
+        title="Budget"
+        description="Import a reward project (status filter coming later)."
+      >
+        {ro ? (
+          <p className="text-sm text-zinc-300">
+            {values.budgetProjectId
+              ? `${values.budgetProjectName || "Project"} (#${values.budgetProjectId})`
+              : "—"}
+          </p>
+        ) : (
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-zinc-400">Reward project</span>
+            <Select
+              value={values.budgetProjectId || NONE}
+              onValueChange={onSelectBudget}
+              disabled={loadingImports}
+            >
+              <SelectTrigger className={selectTriggerClass}>
+                <SelectValue placeholder="Select project" />
+              </SelectTrigger>
+              <SelectContent position="popper" className={selectContentClass}>
+                <SelectItem value={NONE}>None</SelectItem>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={String(p.id)}>
+                    {p.name} (#{p.id})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+        )}
+      </FormSection>
+
+      <FormSection
+        title="Task group & rewards"
+        description="Import a task group, then assign a reward template per task. Optional group-completion template uses taskGroupReward."
+      >
+        {importError ? (
+          <p className="text-sm text-red-400" role="alert">
+            {importError}
+          </p>
+        ) : null}
+        {ro ? (
+          <div className="flex flex-col gap-2 text-sm text-zinc-300">
+            <p>
+              Task group:{" "}
+              {values.taskGroupId ? `#${values.taskGroupId}` : "—"}
+            </p>
+            <p>
+              Group reward template:{" "}
+              {values.taskGroupRewardTemplateId
+                ? `#${values.taskGroupRewardTemplateId}`
+                : "—"}
+            </p>
+            {values.taskRewardItems.length === 0 ? (
+              <p className="text-zinc-500">No task reward items.</p>
+            ) : (
+              <ul className="list-inside list-disc space-y-1 text-zinc-400">
+                {values.taskRewardItems.map((item) => (
+                  <li key={item.taskId || item.taskName}>
+                    {item.taskName || `Task ${item.taskId}`} →{" "}
+                    {item.rewardTemplateName ||
+                      (item.rewardTemplateId
+                        ? `#${item.rewardTemplateId}`
+                        : "no template")}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : (
+          <>
+            <label className="grid gap-1.5 text-sm">
+              <span className="text-zinc-400">Task group</span>
+              <Select
+                value={values.taskGroupId || NONE}
+                onValueChange={(v) => void onSelectTaskGroup(v)}
+                disabled={loadingImports || loadingTasks}
+              >
+                <SelectTrigger className={selectTriggerClass}>
+                  <SelectValue placeholder="Select task group" />
+                </SelectTrigger>
+                <SelectContent position="popper" className={selectContentClass}>
+                  <SelectItem value={NONE}>None</SelectItem>
+                  {taskGroups.map((g) => (
+                    <SelectItem
+                      key={g.id ?? g.name}
+                      value={g.id != null ? String(g.id) : NONE}
+                      disabled={g.id == null}
+                    >
+                      {g.name}
+                      {g.status ? ` · ${g.status}` : ""}
+                      {g.id != null ? ` (#${g.id})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            <label className="grid gap-1.5 text-sm">
+              <span className="text-zinc-400">
+                Group completion reward template (optional)
+              </span>
+              <Select
+                value={values.taskGroupRewardTemplateId || NONE}
+                onValueChange={onSelectGroupReward}
+                disabled={loadingImports || !values.taskGroupId}
+              >
+                <SelectTrigger className={selectTriggerClass}>
+                  <SelectValue placeholder="Select template" />
+                </SelectTrigger>
+                <SelectContent position="popper" className={selectContentClass}>
+                  <SelectItem value={NONE}>None</SelectItem>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={String(t.id)}>
+                      #{t.id} · {t.typeLabel} · {t.voucherType || t.unit} ·{" "}
+                      {t.status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            {loadingTasks ? (
+              <p className="text-sm text-zinc-500">Loading tasks…</p>
+            ) : values.taskRewardItems.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {values.taskRewardItems.map((item) => (
+                  <div
+                    key={item.taskId || item.taskName}
+                    className="grid gap-2 rounded-lg border border-white/10 bg-zinc-900/40 p-3 sm:grid-cols-[1fr_1fr]"
+                  >
+                    <div className="text-sm text-zinc-200">
+                      <p className="font-medium">
+                        {item.taskName || `Task ${item.taskId}`}
+                      </p>
+                      <p className="text-xs text-zinc-500">ID {item.taskId}</p>
+                    </div>
+                    <Select
+                      value={item.rewardTemplateId || NONE}
+                      onValueChange={(v) =>
+                        onSelectTaskTemplate(item.taskId, v)
+                      }
+                    >
+                      <SelectTrigger className={selectTriggerClass}>
+                        <SelectValue placeholder="Reward template" />
+                      </SelectTrigger>
+                      <SelectContent position="popper" className={selectContentClass}>
+                        <SelectItem value={NONE}>None</SelectItem>
+                        {templates.map((t) => (
+                          <SelectItem key={t.id} value={String(t.id)}>
+                            #{t.id} · {t.typeLabel} ·{" "}
+                            {t.voucherType || t.unit}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+            ) : values.taskGroupId ? (
+              <p className="text-sm text-zinc-500">
+                No tasks in this group.
+              </p>
+            ) : null}
+            {!loadingImports && projects.length === 0 && taskGroups.length === 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-fit border-white/10"
+                onClick={() => window.location.reload()}
+              >
+                Reload import lists
+              </Button>
+            ) : null}
+          </>
+        )}
+      </FormSection>
     </div>
   );
 }

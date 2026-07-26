@@ -1,7 +1,7 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-export type api_SimulateTopUpReq = {
-    amount: number;
+export type data_PublishOperatorReq = {
+    operator: string;
 };
 

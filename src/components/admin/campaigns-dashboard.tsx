@@ -92,7 +92,6 @@ export function CampaignsDashboard({
                 ["all", "All Campaigns"],
                 ["draft", "Drafts"],
                 ["published", "Published"],
-                ["archive", "Archived"],
               ] as const
             ).map(([value, label]) => (
               <TabsTrigger

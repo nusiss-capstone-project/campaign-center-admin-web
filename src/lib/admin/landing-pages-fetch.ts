@@ -6,6 +6,10 @@ import { ApiError } from "@/lib/api/core/ApiError";
 import type { StandardEnvelope } from "@/lib/admin/campaign-admin-api";
 import { buildPublicApiUrl } from "@/lib/admin/campaign-admin-api";
 import { fetchJsonEnvelope } from "@/lib/admin/campaign-admin-fetch";
+import {
+  normalizeLandingPageRows,
+  type LandingPageDisplayRow,
+} from "@/lib/admin/landing-page-row";
 
 export type LandingPagesListParams = {
   page: number;
@@ -86,6 +90,29 @@ export type LandingPagesListResponse = StandardEnvelope<{
   total?: number;
   items?: unknown[];
 }>;
+
+/** Published landing pages for campaign editor import (status=2). */
+export async function fetchPublishedLandingPages(params?: {
+  page?: number;
+  pageSize?: number;
+}): Promise<LandingPageDisplayRow[]> {
+  const url = buildLandingPagesListUrl({
+    page: params?.page ?? 1,
+    pageSize: params?.pageSize ?? 100,
+    status: 2,
+  });
+  const body = await fetchJsonEnvelope<LandingPagesListResponse["data"]>(url, {
+    method: "GET",
+  });
+  if (body.code != null && body.code !== 0) {
+    throw new Error(body.message ?? "Failed to load landing pages");
+  }
+  const rawItems = body.data?.items;
+  const items = Array.isArray(rawItems)
+    ? (rawItems as Record<string, unknown>[])
+    : [];
+  return normalizeLandingPageRows(items);
+}
 
 function unwrapGeneratedEnvelope<T>(res: {
   code?: number;

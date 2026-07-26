@@ -6,9 +6,9 @@ import type { api_GenerateLandingTranslationReq } from '../models/api_GenerateLa
 import type { api_LandingPageBody } from '../models/api_LandingPageBody';
 import type { api_LandingPageLocaleDetailHTTPResponse } from '../models/api_LandingPageLocaleDetailHTTPResponse';
 import type { api_LandingPageTranslatedLangsHTTPResponse } from '../models/api_LandingPageTranslatedLangsHTTPResponse';
-import type { api_PublishOperatorReq } from '../models/api_PublishOperatorReq';
 import type { api_PutLandingTranslationHTTPResponse } from '../models/api_PutLandingTranslationHTTPResponse';
 import type { api_PutLandingTranslationReq } from '../models/api_PutLandingTranslationReq';
+import type { data_PublishOperatorReq } from '../models/data_PublishOperatorReq';
 import type { data_StandardResponse } from '../models/data_StandardResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -148,7 +148,7 @@ export class AdminLandingPageService {
      */
     public static postAdminLandingPagesPublish(
         landingPageId: number,
-        body: api_PublishOperatorReq,
+        body: data_PublishOperatorReq,
     ): CancelablePromise<data_StandardResponse> {
         return __request(OpenAPI, {
             method: 'POST',

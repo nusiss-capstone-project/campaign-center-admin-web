@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-import type { api_CreateCampaignReq } from "@/lib/api/models/api_CreateCampaignReq";
-import { AdminCampaignService } from "@/lib/api/services/AdminCampaignService";
-import { ApiError } from "@/lib/api/core/ApiError";
+import {
+  createCampaign,
+} from "@/lib/admin/campaign-admin-fetch";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,458 +17,87 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { fetchCampaignDetail } from "@/lib/admin/campaign-admin-fetch";
-import {
-  parseCampaignDetailToFormValues,
-  toRewardRulesPayload,
-} from "@/lib/admin/campaign-form-values";
-import {
-  CAMPAIGN_MARKET_OPTIONS,
-  CAMPAIGN_TYPE_OPTIONS,
-  REWARD_TYPE_OPTIONS,
-  USER_SEGMENT_OPTIONS,
-} from "@/lib/admin/campaign-options";
 
-function toIsoFromLocal(dtLocal: string): string {
-  if (!dtLocal) return "";
-  const d = new Date(dtLocal);
-  return Number.isNaN(d.getTime()) ? "" : d.toISOString();
-}
-
-function createCampaignErrorMessage(err: unknown): string {
-  if (err instanceof ApiError) return `${err.status} ${err.statusText}`;
-  if (err instanceof Error) return err.message;
-  return "Create failed";
-}
-
-function createdCampaignId(data: unknown): number | null {
-  if (data == null || typeof data !== "object" || !("id" in data)) return null;
-  const id = (data as { id: unknown }).id;
-  return typeof id === "number" ? id : null;
-}
-
-function isCreateCampaignBodyComplete(body: api_CreateCampaignReq): boolean {
-  return Boolean(
-    body.name &&
-      body.type &&
-      body.targetMarket &&
-      body.targetUserSegment &&
-      body.registrationStartTime &&
-      body.registrationEndTime &&
-      body.campaignStartTime &&
-      body.campaignEndTime,
-  );
-}
-
-function AdminCreateCampaignPageInner() {
+export default function AdminCreateCampaignPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const duplicateFrom = searchParams.get("duplicateFrom");
-
+  const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [dupLoading, setDupLoading] = useState(false);
-
-  const [name, setName] = useState("");
-  const [type, setType] = useState("TOPUP_REWARD");
-  const [targetMarket, setTargetMarket] = useState<string>(
-    CAMPAIGN_MARKET_OPTIONS[0].value,
-  );
-  const [targetUserSegment, setTargetUserSegment] = useState<string>(
-    USER_SEGMENT_OPTIONS[0].value,
-  );
-  const [registrationStartTime, setRegistrationStartTime] = useState("");
-  const [registrationEndTime, setRegistrationEndTime] = useState("");
-  const [campaignStartTime, setCampaignStartTime] = useState("");
-  const [campaignEndTime, setCampaignEndTime] = useState("");
-  const [landingPageId, setLandingPageId] = useState("");
-  const [rewardType, setRewardType] = useState<string>(
-    REWARD_TYPE_OPTIONS[0].value,
-  );
-  const [rewardMode, setRewardMode] = useState("FIXED_AMOUNT");
-  const [rewardAmount, setRewardAmount] = useState("0");
-  const [rewardCurrency, setRewardCurrency] = useState("USD");
-  const [rewardPercentage, setRewardPercentage] = useState("0");
-  const [maxRewardAmount, setMaxRewardAmount] = useState("0");
-  const [topupThreshold, setTopupThreshold] = useState("0");
-  const [maxClaimPerUser, setMaxClaimPerUser] = useState("1");
-  const [minObtainDays, setMinObtainDays] = useState("0");
-
-  useEffect(() => {
-    if (!duplicateFrom) return;
-    const id = Number(duplicateFrom);
-    if (!Number.isFinite(id) || id <= 0) return;
-
-    let cancelled = false;
-    setDupLoading(true);
-    setError(null);
-
-    void (async () => {
-      try {
-        const data = await fetchCampaignDetail(id);
-        if (cancelled) return;
-        const v = parseCampaignDetailToFormValues(data);
-        setName(`${v.name} (copy)`);
-        setType(v.type);
-        setTargetMarket(v.targetMarket);
-        setTargetUserSegment(v.targetUserSegment);
-        setRegistrationStartTime(v.registrationStartTime);
-        setRegistrationEndTime(v.registrationEndTime);
-        setCampaignStartTime(v.campaignStartTime);
-        setCampaignEndTime(v.campaignEndTime);
-        setLandingPageId(v.landingPageId);
-        setRewardType(v.rewardType);
-        setRewardMode(v.rewardMode);
-        setRewardAmount(v.rewardAmount);
-        setRewardCurrency(v.rewardCurrency);
-        setRewardPercentage(v.rewardPercentage);
-        setMaxRewardAmount(v.maxRewardAmount);
-        setTopupThreshold(v.topupThreshold);
-        setMaxClaimPerUser(v.maxClaimPerUser);
-        setMinObtainDays(v.minObtainDays);
-      } catch (e) {
-        if (cancelled) return;
-        setError(
-          e instanceof Error ? e.message : "Could not load campaign to duplicate",
-        );
-      } finally {
-        if (!cancelled) setDupLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [duplicateFrom]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setError("Name is required.");
+      return;
+    }
     setSubmitting(true);
-
-    let body: api_CreateCampaignReq;
+    setError(null);
     try {
-      body = {
-        name: name.trim(),
-        type: type.trim(),
-        targetMarket: targetMarket.trim(),
-        targetUserSegment: targetUserSegment.trim(),
-        registrationStartTime: toIsoFromLocal(registrationStartTime),
-        registrationEndTime: toIsoFromLocal(registrationEndTime),
-        campaignStartTime: toIsoFromLocal(campaignStartTime),
-        campaignEndTime: toIsoFromLocal(campaignEndTime),
-        rewardRules: toRewardRulesPayload({
-          name,
-          type,
-          targetMarket,
-          targetUserSegment,
-          registrationStartTime,
-          registrationEndTime,
-          campaignStartTime,
-          campaignEndTime,
-          landingPageId,
-          rewardType,
-          rewardMode,
-          rewardAmount,
-          rewardCurrency,
-          rewardPercentage,
-          maxRewardAmount,
-          topupThreshold,
-          maxClaimPerUser,
-          minObtainDays,
-        }),
-      };
+      const campaignId = await createCampaign(trimmed);
+      router.push(`/admin/campaigns/${campaignId}/edit`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid reward rules.");
-      setSubmitting(false);
-      return;
-    }
-
-    const landingIdTrim = landingPageId.trim();
-    if (landingIdTrim !== "") {
-      const n = Number(landingIdTrim);
-      if (Number.isFinite(n)) body.landingPageId = n;
-    }
-
-    if (!isCreateCampaignBodyComplete(body)) {
-      setError("Fill required fields and valid date/time values.");
-      setSubmitting(false);
-      return;
-    }
-
-    try {
-      const res = await AdminCampaignService.postAdminCampaigns(body);
-      const created = createdCampaignId(res.data);
-      router.push(created != null ? `/admin/campaigns/${created}` : "/admin/campaigns");
-    } catch (err) {
-      setError(createCampaignErrorMessage(err));
-    } finally {
+      setError(err instanceof Error ? err.message : "Create failed");
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
-      <Card>
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-6 p-6">
+      <Button
+        variant="outline"
+        asChild
+        className="w-fit border-white/10 bg-zinc-900/50"
+      >
+        <Link href="/admin/campaigns">← Campaigns</Link>
+      </Button>
+
+      <Card className="border-white/10 bg-zinc-900/40 text-zinc-100 ring-white/10">
         <CardHeader>
-          <CardTitle>Create campaign</CardTitle>
-          <CardDescription>POST /admin/campaigns</CardDescription>
+          <CardTitle className="text-white">Create campaign</CardTitle>
+          <CardDescription className="text-zinc-500">
+            Create a campaign shell with a name. You will configure the draft
+            version on the next screen.
+          </CardDescription>
         </CardHeader>
-        <form onSubmit={onSubmit}>
+        <form onSubmit={(e) => void onSubmit(e)}>
           <CardContent className="flex flex-col gap-4">
-            {dupLoading ? (
-              <p className="text-sm text-muted-foreground">Loading template…</p>
-            ) : null}
             {error ? (
-              <p className="text-sm text-destructive" role="alert">
+              <p className="text-sm text-red-400" role="alert">
                 {error}
               </p>
             ) : null}
             <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">Name</span>
+              <span className="text-zinc-400">Name</span>
               <Input
                 value={name}
-                onChange={(ev) => setName(ev.target.value)}
+                onChange={(e) => setName(e.target.value)}
                 required
+                disabled={submitting}
+                className="border-white/10 bg-zinc-900/80 text-zinc-100"
+                placeholder="Campaign name"
               />
             </label>
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">Type</span>
-              <Select value={type} onValueChange={setType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select campaign type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CAMPAIGN_TYPE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">Target market</span>
-              <Select value={targetMarket} onValueChange={setTargetMarket}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select target market" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CAMPAIGN_MARKET_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">Target user segment</span>
-              <Select
-                value={targetUserSegment}
-                onValueChange={setTargetUserSegment}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select user segment" />
-                </SelectTrigger>
-                <SelectContent>
-                  {USER_SEGMENT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">Landing page ID (optional)</span>
-              <Input
-                inputMode="numeric"
-                value={landingPageId}
-                onChange={(ev) => setLandingPageId(ev.target.value)}
-                placeholder="e.g. 12"
-              />
-            </label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1.5 text-sm">
-                <span className="text-muted-foreground">Registration start</span>
-                <Input
-                  type="datetime-local"
-                  value={registrationStartTime}
-                  onChange={(ev) => setRegistrationStartTime(ev.target.value)}
-                  required
-                />
-              </label>
-              <label className="grid gap-1.5 text-sm">
-                <span className="text-muted-foreground">Registration end</span>
-                <Input
-                  type="datetime-local"
-                  value={registrationEndTime}
-                  onChange={(ev) => setRegistrationEndTime(ev.target.value)}
-                  required
-                />
-              </label>
-              <label className="grid gap-1.5 text-sm">
-                <span className="text-muted-foreground">Campaign start</span>
-                <Input
-                  type="datetime-local"
-                  value={campaignStartTime}
-                  onChange={(ev) => setCampaignStartTime(ev.target.value)}
-                  required
-                />
-              </label>
-              <label className="grid gap-1.5 text-sm">
-                <span className="text-muted-foreground">Campaign end</span>
-                <Input
-                  type="datetime-local"
-                  value={campaignEndTime}
-                  onChange={(ev) => setCampaignEndTime(ev.target.value)}
-                  required
-                />
-              </label>
-            </div>
-            <div className="border-t pt-4">
-              <p className="mb-3 text-sm font-medium">Reward rules</p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1.5 text-sm">
-                  <span className="text-muted-foreground">Reward type</span>
-                  <Select value={rewardType} onValueChange={setRewardType}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select reward type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {REWARD_TYPE_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
-                <label className="grid gap-1.5 text-sm">
-                  <span className="text-muted-foreground">Reward mode</span>
-                  <Select value={rewardMode} onValueChange={setRewardMode}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select reward mode" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="FIXED_AMOUNT">Fixed amount</SelectItem>
-                      <SelectItem value="PERCENTAGE">Percentage</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </label>
-                <label className="grid gap-1.5 text-sm">
-                  <span className="text-muted-foreground">Reward currency</span>
-                  <Input
-                    value={rewardCurrency}
-                    onChange={(ev) => setRewardCurrency(ev.target.value)}
-                    placeholder="USD"
-                  />
-                </label>
-                {rewardMode === "PERCENTAGE" ? (
-                  <>
-                    <label className="grid gap-1.5 text-sm">
-                      <span className="text-muted-foreground">
-                        Reward percentage
-                      </span>
-                      <Input
-                        type="number"
-                        step="any"
-                        value={rewardPercentage}
-                        onChange={(ev) => setRewardPercentage(ev.target.value)}
-                        required
-                      />
-                    </label>
-                    <label className="grid gap-1.5 text-sm">
-                      <span className="text-muted-foreground">
-                        Max reward amount
-                      </span>
-                      <Input
-                        type="number"
-                        step="any"
-                        value={maxRewardAmount}
-                        onChange={(ev) => setMaxRewardAmount(ev.target.value)}
-                      />
-                    </label>
-                  </>
-                ) : (
-                  <label className="grid gap-1.5 text-sm">
-                    <span className="text-muted-foreground">Reward amount</span>
-                    <Input
-                      type="number"
-                      step="any"
-                      value={rewardAmount}
-                      onChange={(ev) => setRewardAmount(ev.target.value)}
-                      required
-                    />
-                  </label>
-                )}
-                <label className="grid gap-1.5 text-sm">
-                  <span className="text-muted-foreground">Top-up threshold</span>
-                  <Input
-                    type="number"
-                    step="any"
-                    value={topupThreshold}
-                    onChange={(ev) => setTopupThreshold(ev.target.value)}
-                    required
-                  />
-                </label>
-                <label className="grid gap-1.5 text-sm">
-                  <span className="text-muted-foreground">Max claim per user</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={maxClaimPerUser}
-                    onChange={(ev) => setMaxClaimPerUser(ev.target.value)}
-                    required
-                  />
-                </label>
-                <label className="grid gap-1.5 text-sm">
-                  <span className="text-muted-foreground">Min obtain days</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={minObtainDays}
-                    onChange={(ev) => setMinObtainDays(ev.target.value)}
-                    required
-                  />
-                </label>
-              </div>
-            </div>
           </CardContent>
-          <CardFooter className="flex flex-wrap justify-between gap-3 border-t bg-transparent">
-            <Button variant="outline" type="button" asChild>
+          <CardFooter className="flex justify-between gap-3 border-t border-white/10 bg-transparent">
+            <Button
+              variant="outline"
+              type="button"
+              asChild
+              className="border-white/10"
+            >
               <Link href="/admin/campaigns">Cancel</Link>
             </Button>
-            <Button type="submit" disabled={submitting || dupLoading}>
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="border-0 bg-white text-black hover:bg-zinc-200"
+            >
               {submitting ? "Creating…" : "Create"}
             </Button>
           </CardFooter>
         </form>
       </Card>
     </div>
-  );
-}
-
-export default function AdminCreateCampaignPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="mx-auto max-w-2xl p-6 text-sm text-muted-foreground">
-          Loading…
-        </div>
-      }
-    >
-      <AdminCreateCampaignPageInner />
-    </Suspense>
   );
 }

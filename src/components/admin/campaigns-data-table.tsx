@@ -2,14 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BarChart3, Eye, MoreHorizontal, Send } from "lucide-react";
+import { BarChart3, Eye, MoreHorizontal, Pencil, Send } from "lucide-react";
 
 import type { CampaignDisplayRow } from "@/lib/admin/campaign-row";
-import { canArchiveCampaign } from "@/lib/admin/campaign-row";
-import {
-  archiveCampaign,
-  publishCampaign,
-} from "@/lib/admin/campaign-admin-fetch";
+import { publishCampaign } from "@/lib/admin/campaign-admin-fetch";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -25,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CampaignStatusBadge } from "@/components/admin/campaign-status-badge";
-import { CampaignTypeBadge } from "@/components/admin/campaign-type-badge";
+import { EditCampaignButton } from "@/components/admin/edit-campaign-button";
 
 type CampaignsDataTableProps = {
   rows: CampaignDisplayRow[];
@@ -48,25 +44,9 @@ export function CampaignsDataTable({
       await publishCampaign(row.id);
       onCampaignsMutated?.();
     } catch (e) {
-      setBanner(
-        e instanceof Error ? e.message : "Publish failed",
-      );
+      setBanner(e instanceof Error ? e.message : "Publish failed");
     } finally {
       setPublishingId(null);
-    }
-  }
-
-  async function handleArchive(row: CampaignDisplayRow) {
-    if (!canArchiveCampaign(row)) return;
-    setBanner(null);
-    try {
-      await archiveCampaign(row.id);
-      setMenuOpenId(null);
-      onCampaignsMutated?.();
-    } catch (e) {
-      setBanner(
-        e instanceof Error ? e.message : "Archive failed",
-      );
     }
   }
 
@@ -87,19 +67,10 @@ export function CampaignsDataTable({
               Campaign Name
             </TableHead>
             <TableHead className="h-11 border-0 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-              Type
-            </TableHead>
-            <TableHead className="h-11 border-0 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-              Target Market
-            </TableHead>
-            <TableHead className="h-11 border-0 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-              Segment
+              Version
             </TableHead>
             <TableHead className="h-11 border-0 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
               Status
-            </TableHead>
-            <TableHead className="h-11 border-0 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-              Campaign Period
             </TableHead>
             <TableHead className="h-11 border-0 px-4 text-right text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
               Actions
@@ -108,12 +79,7 @@ export function CampaignsDataTable({
         </TableHeader>
         <TableBody>
           {rows.map((row) => {
-            const canEdit =
-              row.statusCategory === "draft" ||
-              row.statusCategory === "published";
-            const canArchive = canArchiveCampaign(row);
             const menuOpen = menuOpenId === row.id;
-
             return (
               <TableRow
                 key={row.id}
@@ -122,23 +88,14 @@ export function CampaignsDataTable({
                 <TableCell className="border-0 px-4 py-4 font-medium text-white">
                   {row.name}
                 </TableCell>
-                <TableCell className="border-0 px-4 py-4">
-                  <CampaignTypeBadge typeRaw={row.typeRaw} />
-                </TableCell>
-                <TableCell className="border-0 px-4 py-4 text-sm text-zinc-400">
-                  {row.targetMarket}
-                </TableCell>
-                <TableCell className="border-0 px-4 py-4 text-sm text-zinc-400">
-                  {row.segment}
+                <TableCell className="border-0 px-4 py-4 font-mono text-sm text-zinc-400">
+                  {row.version != null ? `v${row.version}` : "—"}
                 </TableCell>
                 <TableCell className="border-0 px-4 py-4">
                   <CampaignStatusBadge
                     category={row.statusCategory}
                     label={row.statusLabel}
                   />
-                </TableCell>
-                <TableCell className="border-0 px-4 py-4 text-sm text-zinc-500">
-                  {row.periodLabel}
                 </TableCell>
                 <TableCell className="border-0 px-4 py-4">
                   <div className="flex justify-end gap-0.5">
@@ -168,6 +125,16 @@ export function CampaignsDataTable({
                         <Eye className="size-4" strokeWidth={1.75} />
                       </Link>
                     </Button>
+                    <EditCampaignButton
+                      campaignId={row.id}
+                      statusCategory={row.statusCategory}
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-zinc-400 hover:bg-white/5 hover:text-white"
+                      onError={(message) => setBanner(message)}
+                    >
+                      <Pencil className="size-4" strokeWidth={1.75} />
+                    </EditCampaignButton>
                     {row.statusCategory === "draft" ? (
                       <Button
                         type="button"
@@ -214,6 +181,15 @@ export function CampaignsDataTable({
                         >
                           View Details
                         </Link>
+                        <EditCampaignButton
+                          campaignId={row.id}
+                          statusCategory={row.statusCategory}
+                          asMenuItem
+                          onStarted={() => setMenuOpenId(null)}
+                          onError={(message) => setBanner(message)}
+                        >
+                          Edit
+                        </EditCampaignButton>
                         <Link
                           href={`/admin/campaigns/${row.id}/performance`}
                           className="block rounded-md px-3 py-2 text-sm text-white hover:bg-white/10"
@@ -221,43 +197,6 @@ export function CampaignsDataTable({
                         >
                           Performance
                         </Link>
-                        {canEdit ? (
-                          <Link
-                            href={`/admin/campaigns/${row.id}/edit`}
-                            className="block rounded-md px-3 py-2 text-sm text-white hover:bg-white/10"
-                            onClick={() => setMenuOpenId(null)}
-                          >
-                            Edit
-                          </Link>
-                        ) : null}
-                        <Link
-                          href={`/admin/campaigns/create?duplicateFrom=${row.id}`}
-                          className="block rounded-md px-3 py-2 text-sm text-white hover:bg-white/10"
-                          onClick={() => setMenuOpenId(null)}
-                        >
-                          Duplicate
-                        </Link>
-                        <button
-                          type="button"
-                          disabled={!canArchive}
-                          title={
-                            !canArchive
-                              ? row.statusCategory === "archive"
-                                ? "Already archived"
-                                : row.statusCategory !== "draft" &&
-                                    row.statusCategory !== "published"
-                                  ? "Only draft or published campaigns can be archived"
-                                  : row.campaignStartMs == null ||
-                                      row.campaignEndMs == null
-                                    ? "Campaign schedule is required to archive"
-                                    : "Archive is available when the campaign is outside its activity period"
-                              : undefined
-                          }
-                          className="w-full rounded-md px-3 py-2 text-left text-sm text-red-400 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-                          onClick={() => void handleArchive(row)}
-                        >
-                          Archive
-                        </button>
                       </PopoverContent>
                     </Popover>
                   </div>

@@ -1,3 +1,5 @@
+"use client";
+
 import type { CampaignStatusCategory } from "@/lib/admin/campaign-row";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -15,11 +17,6 @@ const SPECS: Record<
     dot: "bg-emerald-400",
     chip: "border-emerald-500/20 bg-emerald-500/10",
     text: "text-emerald-300",
-  },
-  archive: {
-    dot: "bg-zinc-500",
-    chip: "border-zinc-600/40 bg-zinc-800/60",
-    text: "text-zinc-400",
   },
 };
 
