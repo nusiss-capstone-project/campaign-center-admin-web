@@ -15,8 +15,7 @@ import {
   fetchProjects,
   fetchTemplates,
 } from "@/lib/admin/reward/reward-api";
-import type { ProjectDisplayRow } from "@/lib/admin/reward/reward-row";
-import type { TemplateDisplayRow } from "@/lib/admin/reward/reward-row";
+import type { ProjectDisplayRow, TemplateDisplayRow } from "@/lib/admin/reward/reward-row";
 import type { TaskGroupVO, TaskVO } from "@/lib/admin/task-types";
 import { Input } from "@/components/ui/input";
 import {
@@ -82,43 +81,22 @@ function FormSection({
   );
 }
 
-type CampaignDetailsFormProps = {
-  values: CampaignFormValues;
-  readOnly: boolean;
-  onChange?: (next: CampaignFormValues) => void;
-  statusLabel?: string | null;
-  versionLabel?: string | null;
-};
+const FIELD_CLASS =
+  "w-full border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70";
+const SELECT_TRIGGER_CLASS = `${FIELD_CLASS} min-w-0 justify-between`;
+const SELECT_CONTENT_CLASS =
+  "w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)] max-w-[min(100vw-2rem,40rem)]";
 
-function patch(
-  prev: CampaignFormValues,
-  next: Partial<CampaignFormValues>,
-): CampaignFormValues {
-  return { ...prev, ...next };
-}
-
-export function CampaignDetailsForm({
-  values,
-  readOnly,
-  onChange,
-  statusLabel,
-  versionLabel,
-}: Readonly<CampaignDetailsFormProps>) {
-  const ro = readOnly;
-  const set = (p: Partial<CampaignFormValues>) => {
-    if (!readOnly && onChange) onChange(patch(values, p));
-  };
-
+function useCampaignImportLists(readOnly: boolean) {
   const [projects, setProjects] = useState<ProjectDisplayRow[]>([]);
   const [templates, setTemplates] = useState<TemplateDisplayRow[]>([]);
   const [taskGroups, setTaskGroups] = useState<TaskGroupVO[]>([]);
   const [landingPages, setLandingPages] = useState<LandingPageDisplayRow[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
   const [loadingImports, setLoadingImports] = useState(false);
-  const [loadingTasks, setLoadingTasks] = useState(false);
 
   useEffect(() => {
-    if (ro) return;
+    if (readOnly) return;
     let cancelled = false;
     async function load() {
       setLoadingImports(true);
@@ -149,7 +127,266 @@ export function CampaignDetailsForm({
     return () => {
       cancelled = true;
     };
-  }, [ro]);
+  }, [readOnly]);
+
+  return {
+    projects,
+    templates,
+    taskGroups,
+    landingPages,
+    importError,
+    setImportError,
+    loadingImports,
+  };
+}
+
+function taskRewardLabel(item: CampaignFormValues["taskRewardItems"][number]) {
+  if (item.rewardTemplateName) return item.rewardTemplateName;
+  if (item.rewardTemplateId) return `#${item.rewardTemplateId}`;
+  return "no template";
+}
+
+type TaskRewardItemsPanelProps = {
+  loadingTasks: boolean;
+  taskGroupId: string;
+  taskRewardItems: CampaignFormValues["taskRewardItems"];
+  templates: TemplateDisplayRow[];
+  selectTriggerClass: string;
+  selectContentClass: string;
+  onSelectTaskTemplate: (taskId: string, templateId: string) => void;
+};
+
+function TaskRewardItemsPanel({
+  loadingTasks,
+  taskGroupId,
+  taskRewardItems,
+  templates,
+  selectTriggerClass,
+  selectContentClass,
+  onSelectTaskTemplate,
+}: Readonly<TaskRewardItemsPanelProps>) {
+  if (loadingTasks) {
+    return <p className="text-sm text-zinc-500">Loading tasks…</p>;
+  }
+  if (taskRewardItems.length > 0) {
+    return (
+      <div className="flex flex-col gap-3">
+        {taskRewardItems.map((item) => (
+          <div
+            key={item.taskId || item.taskName}
+            className="grid gap-2 rounded-lg border border-white/10 bg-zinc-900/40 p-3 sm:grid-cols-[1fr_1fr]"
+          >
+            <div className="text-sm text-zinc-200">
+              <p className="font-medium">
+                {item.taskName || `Task ${item.taskId}`}
+              </p>
+              <p className="text-xs text-zinc-500">ID {item.taskId}</p>
+            </div>
+            <Select
+              value={item.rewardTemplateId || NONE}
+              onValueChange={(v) => onSelectTaskTemplate(item.taskId, v)}
+            >
+              <SelectTrigger className={selectTriggerClass}>
+                <SelectValue placeholder="Reward template" />
+              </SelectTrigger>
+              <SelectContent position="popper" className={selectContentClass}>
+                <SelectItem value={NONE}>None</SelectItem>
+                {templates.map((t) => (
+                  <SelectItem key={t.id} value={String(t.id)}>
+                    #{t.id} · {t.typeLabel} · {t.voucherType || t.unit}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (taskGroupId) {
+    return (
+      <p className="text-sm text-zinc-500">No tasks in this group.</p>
+    );
+  }
+  return null;
+}
+
+type CampaignTaskRewardsSectionProps = {
+  values: CampaignFormValues;
+  readOnly: boolean;
+  importError: string | null;
+  loadingImports: boolean;
+  loadingTasks: boolean;
+  projects: ProjectDisplayRow[];
+  templates: TemplateDisplayRow[];
+  taskGroups: TaskGroupVO[];
+  onSelectTaskGroup: (taskGroupId: string) => void;
+  onSelectGroupReward: (templateId: string) => void;
+  onSelectTaskTemplate: (taskId: string, templateId: string) => void;
+};
+
+function CampaignTaskRewardsSection({
+  values,
+  readOnly,
+  importError,
+  loadingImports,
+  loadingTasks,
+  projects,
+  templates,
+  taskGroups,
+  onSelectTaskGroup,
+  onSelectGroupReward,
+  onSelectTaskTemplate,
+}: Readonly<CampaignTaskRewardsSectionProps>) {
+  return (
+    <FormSection
+      title="Task group & rewards"
+      description="Import a task group, then assign a reward template per task. Optional group-completion template uses taskGroupReward."
+    >
+      {importError ? (
+        <p className="text-sm text-red-400" role="alert">
+          {importError}
+        </p>
+      ) : null}
+      {readOnly ? (
+        <div className="flex flex-col gap-2 text-sm text-zinc-300">
+          <p>
+            Task group: {values.taskGroupId ? `#${values.taskGroupId}` : "—"}
+          </p>
+          <p>
+            Group reward template:{" "}
+            {values.taskGroupRewardTemplateId
+              ? `#${values.taskGroupRewardTemplateId}`
+              : "—"}
+          </p>
+          {values.taskRewardItems.length === 0 ? (
+            <p className="text-zinc-500">No task reward items.</p>
+          ) : (
+            <ul className="list-inside list-disc space-y-1 text-zinc-400">
+              {values.taskRewardItems.map((item) => (
+                <li key={item.taskId || item.taskName}>
+                  {item.taskName || `Task ${item.taskId}`} →{" "}
+                  {taskRewardLabel(item)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : (
+        <>
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-zinc-400">Task group</span>
+            <Select
+              value={values.taskGroupId || NONE}
+              onValueChange={(v) => void onSelectTaskGroup(v)}
+              disabled={loadingImports || loadingTasks}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_CLASS}>
+                <SelectValue placeholder="Select task group" />
+              </SelectTrigger>
+              <SelectContent position="popper" className={SELECT_CONTENT_CLASS}>
+                <SelectItem value={NONE}>None</SelectItem>
+                {taskGroups.map((g) => (
+                  <SelectItem
+                    key={g.id ?? g.name}
+                    value={g.id != null ? String(g.id) : NONE}
+                    disabled={g.id == null}
+                  >
+                    {g.name}
+                    {g.status ? ` · ${g.status}` : ""}
+                    {g.id != null ? ` (#${g.id})` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-zinc-400">
+              Group completion reward template (optional)
+            </span>
+            <Select
+              value={values.taskGroupRewardTemplateId || NONE}
+              onValueChange={onSelectGroupReward}
+              disabled={loadingImports || !values.taskGroupId}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_CLASS}>
+                <SelectValue placeholder="Select template" />
+              </SelectTrigger>
+              <SelectContent position="popper" className={SELECT_CONTENT_CLASS}>
+                <SelectItem value={NONE}>None</SelectItem>
+                {templates.map((t) => (
+                  <SelectItem key={t.id} value={String(t.id)}>
+                    #{t.id} · {t.typeLabel} · {t.voucherType || t.unit} ·{" "}
+                    {t.status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+          <TaskRewardItemsPanel
+            loadingTasks={loadingTasks}
+            taskGroupId={values.taskGroupId}
+            taskRewardItems={values.taskRewardItems}
+            templates={templates}
+            selectTriggerClass={SELECT_TRIGGER_CLASS}
+            selectContentClass={SELECT_CONTENT_CLASS}
+            onSelectTaskTemplate={onSelectTaskTemplate}
+          />
+          {!loadingImports &&
+          projects.length === 0 &&
+          taskGroups.length === 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-fit border-white/10"
+              onClick={() => window.location.reload()}
+            >
+              Reload import lists
+            </Button>
+          ) : null}
+        </>
+      )}
+    </FormSection>
+  );
+}
+
+type CampaignDetailsFormProps = {
+  values: CampaignFormValues;
+  readOnly: boolean;
+  onChange?: (next: CampaignFormValues) => void;
+  statusLabel?: string | null;
+  versionLabel?: string | null;
+};
+
+function patch(
+  prev: CampaignFormValues,
+  next: Partial<CampaignFormValues>,
+): CampaignFormValues {
+  return { ...prev, ...next };
+}
+
+export function CampaignDetailsForm({
+  values,
+  readOnly,
+  onChange,
+  statusLabel,
+  versionLabel,
+}: Readonly<CampaignDetailsFormProps>) {
+  const ro = readOnly;
+  const set = (p: Partial<CampaignFormValues>) => {
+    if (!readOnly && onChange) onChange(patch(values, p));
+  };
+
+  const {
+    projects,
+    templates,
+    taskGroups,
+    landingPages,
+    importError,
+    setImportError,
+    loadingImports,
+  } = useCampaignImportLists(ro);
+  const [loadingTasks, setLoadingTasks] = useState(false);
 
   async function onSelectTaskGroup(taskGroupId: string) {
     if (ro) return;
@@ -231,12 +468,6 @@ export function CampaignDetailsForm({
     });
   }
 
-  const fieldClass =
-    "w-full border-white/10 bg-zinc-900/80 text-zinc-100 disabled:opacity-70";
-  const selectTriggerClass = `${fieldClass} min-w-0 justify-between`;
-  const selectContentClass =
-    "w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)] max-w-[min(100vw-2rem,40rem)]";
-
   return (
     <div className="flex flex-col gap-5">
       {(statusLabel || versionLabel) && (
@@ -266,7 +497,7 @@ export function CampaignDetailsForm({
               value={values.name}
               onChange={(e) => set({ name: e.target.value })}
               required
-              className={fieldClass}
+              className={FIELD_CLASS}
             />
           )}
         </label>
@@ -279,7 +510,7 @@ export function CampaignDetailsForm({
             disabled={ro}
             readOnly={ro}
             placeholder="e.g. SG"
-            className={fieldClass}
+            className={FIELD_CLASS}
           />
           <datalist id="campaign-market-suggestions">
             {CAMPAIGN_MARKET_SUGGESTIONS.map((m) => (
@@ -290,16 +521,16 @@ export function CampaignDetailsForm({
         <label className="grid gap-1.5 text-sm">
           <span className="text-zinc-400">Time zone</span>
           {ro ? (
-            <Input value={values.timeZone} readOnly disabled className={fieldClass} />
+            <Input value={values.timeZone} readOnly disabled className={FIELD_CLASS} />
           ) : (
             <Select
               value={values.timeZone || TIMEZONE_OPTIONS[0].value}
               onValueChange={(timeZone) => set({ timeZone })}
             >
-              <SelectTrigger className={selectTriggerClass}>
+              <SelectTrigger className={SELECT_TRIGGER_CLASS}>
                 <SelectValue placeholder="Select time zone" />
               </SelectTrigger>
-              <SelectContent position="popper" className={selectContentClass}>
+              <SelectContent position="popper" className={SELECT_CONTENT_CLASS}>
                 {TIMEZONE_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
@@ -318,7 +549,7 @@ export function CampaignDetailsForm({
               onChange={(e) => set({ registrationStartTime: e.target.value })}
               disabled={ro}
               readOnly={ro}
-              className={fieldClass}
+              className={FIELD_CLASS}
             />
           </label>
           <label className="grid gap-1.5 text-sm">
@@ -329,7 +560,7 @@ export function CampaignDetailsForm({
               onChange={(e) => set({ registrationEndTime: e.target.value })}
               disabled={ro}
               readOnly={ro}
-              className={fieldClass}
+              className={FIELD_CLASS}
             />
           </label>
           <label className="grid gap-1.5 text-sm">
@@ -340,7 +571,7 @@ export function CampaignDetailsForm({
               onChange={(e) => set({ campaignStartTime: e.target.value })}
               disabled={ro}
               readOnly={ro}
-              className={fieldClass}
+              className={FIELD_CLASS}
             />
           </label>
           <label className="grid gap-1.5 text-sm">
@@ -351,7 +582,7 @@ export function CampaignDetailsForm({
               onChange={(e) => set({ campaignEndTime: e.target.value })}
               disabled={ro}
               readOnly={ro}
-              className={fieldClass}
+              className={FIELD_CLASS}
             />
           </label>
         </div>
@@ -370,7 +601,7 @@ export function CampaignDetailsForm({
               onChange={(e) => set({ targetUserGroupId: e.target.value })}
               disabled={ro}
               readOnly={ro}
-              className={fieldClass}
+              className={FIELD_CLASS}
             />
           </label>
           <label className="grid gap-1.5 text-sm">
@@ -380,7 +611,7 @@ export function CampaignDetailsForm({
               onChange={(e) => set({ targetUserGroupName: e.target.value })}
               disabled={ro}
               readOnly={ro}
-              className={fieldClass}
+              className={FIELD_CLASS}
             />
           </label>
         </div>
@@ -402,10 +633,10 @@ export function CampaignDetailsForm({
               onValueChange={onSelectLandingPage}
               disabled={loadingImports}
             >
-              <SelectTrigger className={selectTriggerClass}>
+              <SelectTrigger className={SELECT_TRIGGER_CLASS}>
                 <SelectValue placeholder="Select landing page" />
               </SelectTrigger>
-              <SelectContent position="popper" className={selectContentClass}>
+              <SelectContent position="popper" className={SELECT_CONTENT_CLASS}>
                 <SelectItem value={NONE}>None</SelectItem>
                 {landingPages.map((page) => (
                   <SelectItem key={page.id} value={String(page.id)}>
@@ -436,10 +667,10 @@ export function CampaignDetailsForm({
               onValueChange={onSelectBudget}
               disabled={loadingImports}
             >
-              <SelectTrigger className={selectTriggerClass}>
+              <SelectTrigger className={SELECT_TRIGGER_CLASS}>
                 <SelectValue placeholder="Select project" />
               </SelectTrigger>
-              <SelectContent position="popper" className={selectContentClass}>
+              <SelectContent position="popper" className={SELECT_CONTENT_CLASS}>
                 <SelectItem value={NONE}>None</SelectItem>
                 {projects.map((p) => (
                   <SelectItem key={p.id} value={String(p.id)}>
@@ -452,149 +683,19 @@ export function CampaignDetailsForm({
         )}
       </FormSection>
 
-      <FormSection
-        title="Task group & rewards"
-        description="Import a task group, then assign a reward template per task. Optional group-completion template uses taskGroupReward."
-      >
-        {importError ? (
-          <p className="text-sm text-red-400" role="alert">
-            {importError}
-          </p>
-        ) : null}
-        {ro ? (
-          <div className="flex flex-col gap-2 text-sm text-zinc-300">
-            <p>
-              Task group:{" "}
-              {values.taskGroupId ? `#${values.taskGroupId}` : "—"}
-            </p>
-            <p>
-              Group reward template:{" "}
-              {values.taskGroupRewardTemplateId
-                ? `#${values.taskGroupRewardTemplateId}`
-                : "—"}
-            </p>
-            {values.taskRewardItems.length === 0 ? (
-              <p className="text-zinc-500">No task reward items.</p>
-            ) : (
-              <ul className="list-inside list-disc space-y-1 text-zinc-400">
-                {values.taskRewardItems.map((item) => (
-                  <li key={item.taskId || item.taskName}>
-                    {item.taskName || `Task ${item.taskId}`} →{" "}
-                    {item.rewardTemplateName ||
-                      (item.rewardTemplateId
-                        ? `#${item.rewardTemplateId}`
-                        : "no template")}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ) : (
-          <>
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-zinc-400">Task group</span>
-              <Select
-                value={values.taskGroupId || NONE}
-                onValueChange={(v) => void onSelectTaskGroup(v)}
-                disabled={loadingImports || loadingTasks}
-              >
-                <SelectTrigger className={selectTriggerClass}>
-                  <SelectValue placeholder="Select task group" />
-                </SelectTrigger>
-                <SelectContent position="popper" className={selectContentClass}>
-                  <SelectItem value={NONE}>None</SelectItem>
-                  {taskGroups.map((g) => (
-                    <SelectItem
-                      key={g.id ?? g.name}
-                      value={g.id != null ? String(g.id) : NONE}
-                      disabled={g.id == null}
-                    >
-                      {g.name}
-                      {g.status ? ` · ${g.status}` : ""}
-                      {g.id != null ? ` (#${g.id})` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-zinc-400">
-                Group completion reward template (optional)
-              </span>
-              <Select
-                value={values.taskGroupRewardTemplateId || NONE}
-                onValueChange={onSelectGroupReward}
-                disabled={loadingImports || !values.taskGroupId}
-              >
-                <SelectTrigger className={selectTriggerClass}>
-                  <SelectValue placeholder="Select template" />
-                </SelectTrigger>
-                <SelectContent position="popper" className={selectContentClass}>
-                  <SelectItem value={NONE}>None</SelectItem>
-                  {templates.map((t) => (
-                    <SelectItem key={t.id} value={String(t.id)}>
-                      #{t.id} · {t.typeLabel} · {t.voucherType || t.unit} ·{" "}
-                      {t.status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-            {loadingTasks ? (
-              <p className="text-sm text-zinc-500">Loading tasks…</p>
-            ) : values.taskRewardItems.length > 0 ? (
-              <div className="flex flex-col gap-3">
-                {values.taskRewardItems.map((item) => (
-                  <div
-                    key={item.taskId || item.taskName}
-                    className="grid gap-2 rounded-lg border border-white/10 bg-zinc-900/40 p-3 sm:grid-cols-[1fr_1fr]"
-                  >
-                    <div className="text-sm text-zinc-200">
-                      <p className="font-medium">
-                        {item.taskName || `Task ${item.taskId}`}
-                      </p>
-                      <p className="text-xs text-zinc-500">ID {item.taskId}</p>
-                    </div>
-                    <Select
-                      value={item.rewardTemplateId || NONE}
-                      onValueChange={(v) =>
-                        onSelectTaskTemplate(item.taskId, v)
-                      }
-                    >
-                      <SelectTrigger className={selectTriggerClass}>
-                        <SelectValue placeholder="Reward template" />
-                      </SelectTrigger>
-                      <SelectContent position="popper" className={selectContentClass}>
-                        <SelectItem value={NONE}>None</SelectItem>
-                        {templates.map((t) => (
-                          <SelectItem key={t.id} value={String(t.id)}>
-                            #{t.id} · {t.typeLabel} ·{" "}
-                            {t.voucherType || t.unit}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
-              </div>
-            ) : values.taskGroupId ? (
-              <p className="text-sm text-zinc-500">
-                No tasks in this group.
-              </p>
-            ) : null}
-            {!loadingImports && projects.length === 0 && taskGroups.length === 0 ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="w-fit border-white/10"
-                onClick={() => window.location.reload()}
-              >
-                Reload import lists
-              </Button>
-            ) : null}
-          </>
-        )}
-      </FormSection>
+      <CampaignTaskRewardsSection
+        values={values}
+        readOnly={ro}
+        importError={importError}
+        loadingImports={loadingImports}
+        loadingTasks={loadingTasks}
+        projects={projects}
+        templates={templates}
+        taskGroups={taskGroups}
+        onSelectTaskGroup={onSelectTaskGroup}
+        onSelectGroupReward={onSelectGroupReward}
+        onSelectTaskTemplate={onSelectTaskTemplate}
+      />
     </div>
   );
 }

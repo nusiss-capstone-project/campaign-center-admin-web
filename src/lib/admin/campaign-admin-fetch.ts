@@ -33,9 +33,10 @@ export function campaignsListUrl(params?: {
     usp.set("campaignId", String(params.campaignId));
   }
   const qs = usp.toString();
-  return buildPublicApiUrl(
-    `/campaign-center-api/v1/admin/campaigns${qs ? `?${qs}` : ""}`,
-  );
+  const path = qs
+    ? `/campaign-center-api/v1/admin/campaigns?${qs}`
+    : "/campaign-center-api/v1/admin/campaigns";
+  return buildPublicApiUrl(path);
 }
 
 export function campaignDetailUrl(id: number): string {

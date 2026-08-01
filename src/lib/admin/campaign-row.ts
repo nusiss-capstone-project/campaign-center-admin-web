@@ -72,21 +72,15 @@ export function normalizeCampaignRow(
   index: number,
 ): CampaignDisplayRow | null {
   const rawId = row.id ?? row.campaignId;
-  const id =
-    typeof rawId === "number"
-      ? rawId
-      : typeof rawId === "string"
-        ? Number(rawId)
-        : Number.NaN;
+  let id = Number.NaN;
+  if (typeof rawId === "number") id = rawId;
+  else if (typeof rawId === "string") id = Number(rawId);
   if (!Number.isFinite(id)) return null;
 
   const name = typeof row.name === "string" ? row.name : `Campaign ${index + 1}`;
-  const market =
-    typeof row.market === "string"
-      ? row.market
-      : typeof row.targetMarket === "string"
-        ? row.targetMarket
-        : "—";
+  let market = "—";
+  if (typeof row.market === "string") market = row.market;
+  else if (typeof row.targetMarket === "string") market = row.targetMarket;
 
   const statusCategory = parseStatusCategory(row.status);
   const startRaw = row.campaignStartTime ?? row.campaign_start_time;

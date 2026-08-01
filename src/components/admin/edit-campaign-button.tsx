@@ -6,11 +6,12 @@ import { useState, type ReactNode } from "react";
 
 import { createCampaignVersion } from "@/lib/admin/campaign-admin-fetch";
 import { campaignEditHref } from "@/lib/admin/campaign-edit-href";
+import type { CampaignStatusCategory } from "@/lib/admin/campaign-row";
 import { Button } from "@/components/ui/button";
 
 type EditCampaignButtonProps = {
   campaignId: number;
-  statusCategory: "draft" | "published" | string;
+  statusCategory: CampaignStatusCategory;
   children?: ReactNode;
   className?: string;
   variant?: "ghost" | "default" | "outline";

@@ -9,10 +9,10 @@ import { fetchCampaignDetail } from "@/lib/admin/campaign-admin-fetch";
 import {
   emptyCampaignFormValues,
   parseCampaignDetailToFormValues,
+  pickCampaignDetailName,
   pickCampaignStatus,
   pickCampaignVersion,
   statusCodeToLabel,
-  coerceCampaignDetail,
   type CampaignFormValues,
 } from "@/lib/admin/campaign-form-values";
 import { parseRouteId } from "@/lib/admin/parse-route-id";
@@ -78,7 +78,7 @@ export default function AdminCampaignDetailPage() {
   const statusCategory = statusCode === 2 ? "published" : "draft";
   const titleName =
     values.name.trim() ||
-    String(coerceCampaignDetail(raw).name ?? "").trim() ||
+    pickCampaignDetailName(raw) ||
     `Campaign ${campaignId}`;
 
   function renderContent() {

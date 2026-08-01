@@ -155,9 +155,9 @@ export default function AdminEditCampaignPage() {
     }
     if (!canEdit && !loading) {
       return (
-        <p className="text-sm text-amber-300" role="status">
+        <output className="block text-sm text-amber-300">
           This campaign is not editable in its current state.
-        </p>
+        </output>
       );
     }
     return (

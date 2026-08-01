@@ -97,6 +97,51 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return null;
 }
 
+function looksLikeCampaignVo(candidate: Record<string, unknown>): boolean {
+  return (
+    "name" in candidate ||
+    "version" in candidate ||
+    "market" in candidate ||
+    "rewardRules" in candidate
+  );
+}
+
+function findNestedCampaignRecord(
+  root: Record<string, unknown>,
+): Record<string, unknown> | null {
+  for (const key of ["campaign", "detail", "item"]) {
+    const candidate = asRecord(root[key]);
+    if (candidate && looksLikeCampaignVo(candidate)) return candidate;
+  }
+  return null;
+}
+
+function parseContentRecord(content: unknown): Record<string, unknown> {
+  if (typeof content === "string" && content.trim().startsWith("{")) {
+    try {
+      return asRecord(JSON.parse(content)) ?? {};
+    } catch {
+      return {};
+    }
+  }
+  return asRecord(content) ?? {};
+}
+
+function mergeDefinedLayers(
+  base: Record<string, unknown>,
+  layers: Array<Record<string, unknown> | null>,
+): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...base };
+  for (const layer of layers) {
+    if (!layer) continue;
+    for (const [key, value] of Object.entries(layer)) {
+      if (key === "content") continue;
+      if (value !== undefined && value !== null) merged[key] = value;
+    }
+  }
+  return merged;
+}
+
 /**
  * Normalize GET campaign detail payloads.
  * Draft backends may nest the editable VO under `content` (JSON string/object)
@@ -106,45 +151,11 @@ export function coerceCampaignDetail(data: unknown): Record<string, unknown> {
   const root = asRecord(data);
   if (!root) return {};
 
-  let nested: Record<string, unknown> | null = null;
-  for (const key of ["campaign", "detail", "item"]) {
-    const candidate = asRecord(root[key]);
-    if (
-      candidate &&
-      ("name" in candidate ||
-        "version" in candidate ||
-        "market" in candidate ||
-        "rewardRules" in candidate)
-    ) {
-      nested = candidate;
-      break;
-    }
-  }
-
-  let fromContent: Record<string, unknown> = {};
-  const content = root.content ?? nested?.content;
-  if (typeof content === "string" && content.trim().startsWith("{")) {
-    try {
-      fromContent = asRecord(JSON.parse(content)) ?? {};
-    } catch {
-      fromContent = {};
-    }
-  } else {
-    fromContent = asRecord(content) ?? {};
-  }
-
+  const nested = findNestedCampaignRecord(root);
+  const fromContent = parseContentRecord(root.content ?? nested?.content);
   // Overlay only defined values so `name: undefined` from the outer shell
   // cannot wipe a name that only exists inside draft `content`.
-  const merged: Record<string, unknown> = { ...fromContent };
-  for (const layer of [nested, root]) {
-    if (!layer) continue;
-    for (const [key, value] of Object.entries(layer)) {
-      if (key === "content") continue;
-      if (value !== undefined && value !== null) merged[key] = value;
-    }
-  }
-
-  return merged;
+  return mergeDefinedLayers(fromContent, [nested, root]);
 }
 
 export function parseCampaignDetailToFormValues(
@@ -214,6 +225,11 @@ export function parseCampaignDetailToFormValues(
   };
 }
 
+export function pickCampaignDetailName(data: unknown): string {
+  const name = coerceCampaignDetail(data).name;
+  return typeof name === "string" ? name.trim() : "";
+}
+
 export function pickCampaignStatus(data: unknown): number | null {
   const o = coerceCampaignDetail(data);
   const s = o.status;
@@ -246,7 +262,7 @@ function parseOptionalInt(raw: string, label: string): number | undefined {
   if (raw.trim() === "") return undefined;
   const n = Number(raw);
   if (!Number.isFinite(n)) {
-    throw new Error(`${label} must be a valid number.`);
+    throw new TypeError(`${label} must be a valid number.`);
   }
   return Math.trunc(n);
 }
