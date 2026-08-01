@@ -73,7 +73,9 @@ export default function AdminCreateLandingPagePage() {
       <Card>
         <CardHeader>
           <CardTitle>Create landing page</CardTitle>
-          <CardDescription>POST /admin/landing-pages</CardDescription>
+          <CardDescription>
+            Create a draft landing page, then edit content and publish.
+          </CardDescription>
         </CardHeader>
         <form onSubmit={onSubmit}>
           <CardContent className="flex flex-col gap-4">

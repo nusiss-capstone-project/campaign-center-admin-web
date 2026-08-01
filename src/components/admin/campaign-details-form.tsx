@@ -123,7 +123,7 @@ function useCampaignImportLists(readOnly: boolean) {
         if (!cancelled) setLoadingImports(false);
       }
     }
-    void load();
+    load().catch(() => undefined);
     return () => {
       cancelled = true;
     };
@@ -220,7 +220,7 @@ type CampaignTaskRewardsSectionProps = {
   projects: ProjectDisplayRow[];
   templates: TemplateDisplayRow[];
   taskGroups: TaskGroupVO[];
-  onSelectTaskGroup: (taskGroupId: string) => void;
+  onSelectTaskGroup: (taskGroupId: string) => void | Promise<void>;
   onSelectGroupReward: (templateId: string) => void;
   onSelectTaskTemplate: (taskId: string, templateId: string) => void;
 };
@@ -278,7 +278,9 @@ function CampaignTaskRewardsSection({
             <span className="text-zinc-400">Task group</span>
             <Select
               value={values.taskGroupId || NONE}
-              onValueChange={(v) => void onSelectTaskGroup(v)}
+              onValueChange={(v) => {
+                Promise.resolve(onSelectTaskGroup(v)).catch(() => undefined);
+              }}
               disabled={loadingImports || loadingTasks}
             >
               <SelectTrigger className={SELECT_TRIGGER_CLASS}>

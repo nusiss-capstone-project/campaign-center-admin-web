@@ -117,7 +117,7 @@ export async function fetchCampaignDetail(
     }
   }
   if (typeof body.data !== "object") {
-    throw new Error("Campaign detail missing");
+    throw new TypeError("Campaign detail missing");
   }
   return body.data as data_CampaignVO;
 }
