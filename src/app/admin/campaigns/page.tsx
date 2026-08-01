@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 
 import { CampaignsDashboard } from "@/components/admin/campaigns-dashboard";
+import { campaignsListUrl } from "@/lib/admin/campaign-admin-fetch";
 import type { CampaignDisplayRow } from "@/lib/admin/campaign-row";
 import { normalizeCampaignRows } from "@/lib/admin/campaign-row";
-import { buildPublicApiUrl } from "@/lib/admin/campaign-admin-api";
 import { fetchWithClerkAuthorization } from "@/lib/auth/clerk-token";
 import { isNonProductionRuntime } from "@/lib/is-non-production-runtime";
 
@@ -17,12 +17,6 @@ type CampaignsApiResponse = {
     items?: unknown[];
   };
 };
-
-function buildCampaignsListUrl(): string {
-  return buildPublicApiUrl(
-    "/campaign-center-api/v1/admin/campaigns?page=1&pageSize=10",
-  );
-}
 
 export default function AdminCampaignsPage() {
   const [rows, setRows] = useState<CampaignDisplayRow[]>([]);
@@ -37,7 +31,7 @@ export default function AdminCampaignsPage() {
       setLoading(true);
       setErrorMessage(null);
 
-      const url = buildCampaignsListUrl();
+      const url = campaignsListUrl({ page: 1, pageSize: 100 });
       if (isNonProductionRuntime()) {
         console.log("[admin/campaigns] request URL:", url);
       }
