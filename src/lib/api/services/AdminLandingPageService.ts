@@ -1,14 +1,18 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-import type { api_GenerateLandingTranslationHTTPResponse } from '../models/api_GenerateLandingTranslationHTTPResponse';
-import type { api_GenerateLandingTranslationReq } from '../models/api_GenerateLandingTranslationReq';
-import type { api_LandingPageBody } from '../models/api_LandingPageBody';
-import type { api_LandingPageLocaleDetailHTTPResponse } from '../models/api_LandingPageLocaleDetailHTTPResponse';
-import type { api_LandingPageTranslatedLangsHTTPResponse } from '../models/api_LandingPageTranslatedLangsHTTPResponse';
-import type { api_PutLandingTranslationHTTPResponse } from '../models/api_PutLandingTranslationHTTPResponse';
-import type { api_PutLandingTranslationReq } from '../models/api_PutLandingTranslationReq';
+import type { data_GenerateLandingTranslationData } from '../models/data_GenerateLandingTranslationData';
+import type { data_GenerateLandingTranslationReq } from '../models/data_GenerateLandingTranslationReq';
+import type { data_LandingPageBody } from '../models/data_LandingPageBody';
+import type { data_LandingPageCreateResp } from '../models/data_LandingPageCreateResp';
+import type { data_LandingPageDetailVO } from '../models/data_LandingPageDetailVO';
+import type { data_LandingPageListData } from '../models/data_LandingPageListData';
+import type { data_LandingPagePublishResp } from '../models/data_LandingPagePublishResp';
+import type { data_LandingPageTranslatedLangsData } from '../models/data_LandingPageTranslatedLangsData';
+import type { data_LandingPageUpdateResp } from '../models/data_LandingPageUpdateResp';
 import type { data_PublishOperatorReq } from '../models/data_PublishOperatorReq';
+import type { data_PutLandingTranslationData } from '../models/data_PutLandingTranslationData';
+import type { data_PutLandingTranslationReq } from '../models/data_PutLandingTranslationReq';
 import type { data_StandardResponse } from '../models/data_StandardResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -20,7 +24,7 @@ export class AdminLandingPageService {
      * @param pageSize Page size
      * @param status Status filter
      * @param defaultLang Default language filter e.g. en
-     * @returns data_StandardResponse success
+     * @returns any success
      * @throws ApiError
      */
     public static getAdminLandingPages(
@@ -28,7 +32,9 @@ export class AdminLandingPageService {
         pageSize?: number,
         status?: number,
         defaultLang?: string,
-    ): CancelablePromise<data_StandardResponse> {
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: data_LandingPageListData;
+    })> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/admin/landing-pages',
@@ -46,12 +52,14 @@ export class AdminLandingPageService {
     /**
      * Create landing page (admin)
      * @param body Landing page content
-     * @returns data_StandardResponse success
+     * @returns any success
      * @throws ApiError
      */
     public static postAdminLandingPages(
-        body: api_LandingPageBody,
-    ): CancelablePromise<data_StandardResponse> {
+        body: data_LandingPageBody,
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: data_LandingPageCreateResp;
+    })> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/admin/landing-pages',
@@ -66,13 +74,15 @@ export class AdminLandingPageService {
      * Get landing page (admin)
      * @param landingPageId Landing page ID
      * @param lang Requested language (falls back to default)
-     * @returns data_StandardResponse success
+     * @returns any success
      * @throws ApiError
      */
     public static getAdminLandingPages1(
         landingPageId: number,
         lang?: string,
-    ): CancelablePromise<data_StandardResponse> {
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: data_LandingPageDetailVO;
+    })> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/admin/landing-pages/{landingPageId}',
@@ -92,13 +102,15 @@ export class AdminLandingPageService {
      * Update landing page (admin)
      * @param landingPageId Landing page ID
      * @param body Landing page content
-     * @returns data_StandardResponse success
+     * @returns any success
      * @throws ApiError
      */
     public static putAdminLandingPages(
         landingPageId: number,
-        body: api_LandingPageBody,
-    ): CancelablePromise<data_StandardResponse> {
+        body: data_LandingPageBody,
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: data_LandingPageUpdateResp;
+    })> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/admin/landing-pages/{landingPageId}',
@@ -115,16 +127,17 @@ export class AdminLandingPageService {
     }
     /**
      * Get landing page detail by locale (admin)
-     * title/description/terms come from campaign_landing_page_translations when a row exists for lang; otherwise from campaign_landing_pages. bannerImageUrl, status, timestamps always from campaign_landing_pages.
      * @param landingPageId Landing page ID
      * @param lang Locale tag, e.g. ja, zh-CN
-     * @returns api_LandingPageLocaleDetailHTTPResponse success
+     * @returns any success
      * @throws ApiError
      */
     public static getAdminLandingPagesDetail(
         landingPageId: number,
         lang: string,
-    ): CancelablePromise<api_LandingPageLocaleDetailHTTPResponse> {
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: data_LandingPageDetailVO;
+    })> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/admin/landing-pages/{landingPageId}/detail/{lang}',
@@ -143,13 +156,15 @@ export class AdminLandingPageService {
      * Publish landing page (admin)
      * @param landingPageId Landing page ID
      * @param body Operator
-     * @returns data_StandardResponse success
+     * @returns any success
      * @throws ApiError
      */
     public static postAdminLandingPagesPublish(
         landingPageId: number,
         body: data_PublishOperatorReq,
-    ): CancelablePromise<data_StandardResponse> {
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: data_LandingPagePublishResp;
+    })> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/admin/landing-pages/{landingPageId}/publish',
@@ -165,14 +180,15 @@ export class AdminLandingPageService {
     }
     /**
      * List translated locales for a landing page (admin)
-     * Distinct lang values from the translation table only (excludes default_lang unless a translation row exists).
      * @param landingPageId Landing page ID
-     * @returns api_LandingPageTranslatedLangsHTTPResponse success
+     * @returns any success
      * @throws ApiError
      */
     public static getAdminLandingPagesTranslations(
         landingPageId: number,
-    ): CancelablePromise<api_LandingPageTranslatedLangsHTTPResponse> {
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: data_LandingPageTranslatedLangsData;
+    })> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/admin/landing-pages/{landingPageId}/translations',
@@ -188,16 +204,18 @@ export class AdminLandingPageService {
     }
     /**
      * Generate landing page translation preview (admin)
-     * Returns LLM-translated title/description/terms for the given landing page. Does not persist.
+     * Returns LLM-translated title/description/terms/steps/faq. Does not persist.
      * @param landingPageId Landing page ID
-     * @param body Source/target languages and optional source copy (falls back to landing page fields when empty)
-     * @returns api_GenerateLandingTranslationHTTPResponse success
+     * @param body Source/target languages and optional source copy
+     * @returns any success
      * @throws ApiError
      */
     public static postAdminLandingPagesTranslationsGenerate(
         landingPageId: number,
-        body: api_GenerateLandingTranslationReq,
-    ): CancelablePromise<api_GenerateLandingTranslationHTTPResponse> {
+        body: data_GenerateLandingTranslationReq,
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: data_GenerateLandingTranslationData;
+    })> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/admin/landing-pages/{landingPageId}/translations/generate',
@@ -215,18 +233,19 @@ export class AdminLandingPageService {
     }
     /**
      * Upsert landing page translation (admin)
-     * Creates or updates campaign_landing_page_translations for the given landing page and language code.
      * @param landingPageId Landing page ID
      * @param lang BCP-47 or short language tag, e.g. ja, zh-CN
      * @param body Translated fields
-     * @returns api_PutLandingTranslationHTTPResponse success
+     * @returns any success
      * @throws ApiError
      */
     public static putAdminLandingPagesTranslations(
         landingPageId: number,
         lang: string,
-        body: api_PutLandingTranslationReq,
-    ): CancelablePromise<api_PutLandingTranslationHTTPResponse> {
+        body: data_PutLandingTranslationReq,
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: data_PutLandingTranslationData;
+    })> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/admin/landing-pages/{landingPageId}/translations/{lang}',

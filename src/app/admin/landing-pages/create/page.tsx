@@ -4,9 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import type { api_LandingPageBody } from "@/lib/api/models/api_LandingPageBody";
-import { AdminLandingPageService } from "@/lib/api/services/AdminLandingPageService";
-import { ApiError } from "@/lib/api/core/ApiError";
+import { LandingDetailsForm } from "@/components/admin/landing-details-form";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,31 +14,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  emptyLandingPageFormValues,
+  toLandingPageBody,
+} from "@/lib/admin/landing-page-form-values";
+import { AdminLandingPageService } from "@/lib/api/services/AdminLandingPageService";
+import { ApiError } from "@/lib/api/core/ApiError";
 
 export default function AdminCreateLandingPagePage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [terms, setTerms] = useState("");
-  const [bannerImageUrl, setBannerImageUrl] = useState("");
-  const [defaultLang, setDefaultLang] = useState("en");
+  const [values, setValues] = useState(() => emptyLandingPageFormValues());
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-    const body: api_LandingPageBody = {
-      title: title.trim(),
-      description: description.trim(),
-      terms: terms.trim(),
-      bannerImageUrl: bannerImageUrl.trim(),
-      defaultLang: defaultLang.trim(),
-    };
+    const body = toLandingPageBody(values);
     if (
       !body.title ||
       !body.description ||
@@ -48,7 +39,7 @@ export default function AdminCreateLandingPagePage() {
       !body.bannerImageUrl ||
       !body.defaultLang
     ) {
-      setError("All fields are required.");
+      setError("Title, language, banner, description, and terms are required.");
       setSubmitting(false);
       return;
     }
@@ -70,68 +61,35 @@ export default function AdminCreateLandingPagePage() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
-      <Card>
+      <Card className="border-white/10 bg-zinc-900/40 text-zinc-100 ring-white/10">
         <CardHeader>
-          <CardTitle>Create landing page</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-white">Create landing page</CardTitle>
+          <CardDescription className="text-zinc-500">
             Create a draft landing page, then edit content and publish.
           </CardDescription>
         </CardHeader>
         <form onSubmit={onSubmit}>
           <CardContent className="flex flex-col gap-4">
             {error ? (
-              <p className="text-sm text-destructive" role="alert">
+              <p className="text-sm text-red-400" role="alert">
                 {error}
               </p>
             ) : null}
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">Title</span>
-              <Input
-                value={title}
-                onChange={(ev) => setTitle(ev.target.value)}
-                required
-              />
-            </label>
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">Default Language</span>
-              <Input
-                value={defaultLang}
-                onChange={(ev) => setDefaultLang(ev.target.value)}
-                required
-              />
-            </label>
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">Banner image URL</span>
-              <Input
-                value={bannerImageUrl}
-                onChange={(ev) => setBannerImageUrl(ev.target.value)}
-                required
-              />
-            </label>
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">Description</span>
-              <Textarea
-                value={description}
-                onChange={(ev) => setDescription(ev.target.value)}
-                required
-                rows={5}
-              />
-            </label>
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">Terms</span>
-              <Textarea
-                value={terms}
-                onChange={(ev) => setTerms(ev.target.value)}
-                required
-                rows={6}
-              />
-            </label>
+            <LandingDetailsForm
+              values={values}
+              readOnly={false}
+              onChange={setValues}
+            />
           </CardContent>
-          <CardFooter className="flex flex-wrap justify-between gap-3 border-t bg-transparent">
-            <Button variant="outline" type="button" asChild>
+          <CardFooter className="flex flex-wrap justify-between gap-3 border-t border-white/10 bg-transparent">
+            <Button variant="outline" type="button" asChild className="border-white/10">
               <Link href="/admin/landing-pages">Cancel</Link>
             </Button>
-            <Button type="submit" disabled={submitting}>
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="border-0 bg-white text-black hover:bg-zinc-200"
+            >
               {submitting ? "Creating…" : "Create"}
             </Button>
           </CardFooter>

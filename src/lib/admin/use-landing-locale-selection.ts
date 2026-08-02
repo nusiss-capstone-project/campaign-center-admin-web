@@ -63,18 +63,22 @@ export function useLandingLocaleSelection({
         if (cancelled) return;
         if (detail) {
           const parsed = parseLandingPageDetailToFormValues(detail);
+          // Banner is shared across languages — always from default content.
           setValues({
             ...parsed,
             defaultLang,
-            bannerImageUrl:
-              parsed.bannerImageUrl || defaultValues.bannerImageUrl,
+            bannerImageUrl: defaultValues.bannerImageUrl,
           });
           if (!translatedLangs.includes(selectedLang)) {
             setNotice(missingTranslationNotice);
           }
           return;
         }
-        setValues({ ...defaultValues, defaultLang });
+        setValues({
+          ...defaultValues,
+          defaultLang,
+          bannerImageUrl: defaultValues.bannerImageUrl,
+        });
         setNotice(emptyTranslationNotice);
       } catch (e) {
         if (cancelled) return;
