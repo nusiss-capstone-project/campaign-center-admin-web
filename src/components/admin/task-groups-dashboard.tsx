@@ -3,19 +3,26 @@
 import { useMemo, useState } from "react";
 
 import { TaskGroupsList } from "@/components/admin/task-groups-list";
-import { TaskGroupsPageHeader } from "@/components/admin/task-groups-page-header";
+import {
+  TaskGroupsPageHeader,
+  type TaskGroupStatusFilter,
+} from "@/components/admin/task-groups-page-header";
 import type { TaskGroupDisplayRow } from "@/lib/admin/task-row";
 
 type TaskGroupsDashboardProps = {
   rows: TaskGroupDisplayRow[];
   loading: boolean;
   errorMessage: string | null;
+  statusFilter: TaskGroupStatusFilter;
+  onStatusFilterChange: (value: TaskGroupStatusFilter) => void;
 };
 
 export function TaskGroupsDashboard({
   rows,
   loading,
   errorMessage,
+  statusFilter,
+  onStatusFilterChange,
 }: Readonly<TaskGroupsDashboardProps>) {
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -36,6 +43,8 @@ export function TaskGroupsDashboard({
         totalCount={rows.length}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        statusFilter={statusFilter}
+        onStatusFilterChange={onStatusFilterChange}
       />
       <TaskGroupsList
         rows={filteredRows}

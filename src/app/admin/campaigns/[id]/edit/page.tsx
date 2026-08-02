@@ -21,6 +21,7 @@ import {
 } from "@/lib/admin/campaign-form-values";
 import { parseRouteId } from "@/lib/admin/parse-route-id";
 import { CampaignDetailsForm } from "@/components/admin/campaign-details-form";
+import { useAdminCapabilities } from "@/components/admin/admin-access-provider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,6 +36,7 @@ export default function AdminEditCampaignPage() {
   const router = useRouter();
   const params = useParams();
   const campaignId = parseRouteId(params.id);
+  const caps = useAdminCapabilities();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -91,9 +93,14 @@ export default function AdminEditCampaignPage() {
 
   const statusCode = pickCampaignStatus(raw);
   const statusLabel = statusCodeToLabel(statusCode);
-  const canEdit = version != null && !loading;
+  const canEdit = caps.canEditCampaign && version != null && !loading;
   const canPublish =
-    canEdit && hasSaved && !dirty && !saving && !publishing;
+    caps.canPublishCampaign &&
+    canEdit &&
+    hasSaved &&
+    !dirty &&
+    !saving &&
+    !publishing;
 
   function onFormChange(next: CampaignFormValues) {
     setValues(next);

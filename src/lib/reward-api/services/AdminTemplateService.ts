@@ -2,31 +2,32 @@
 /* istanbul ignore file */
 /* tslint:disable */
 import type { data_BaseResponse } from '../models/data_BaseResponse';
-import type { data_CreateTemplateRequestSwagger } from '../models/data_CreateTemplateRequestSwagger';
+import type { data_CreateTemplateRequest } from '../models/data_CreateTemplateRequest';
 import type { data_CreateTemplateResponse } from '../models/data_CreateTemplateResponse';
 import type { data_PageResult } from '../models/data_PageResult';
 import type { data_PublishTemplateResponse } from '../models/data_PublishTemplateResponse';
-import type { data_TemplateConfigSchemaRef } from '../models/data_TemplateConfigSchemaRef';
-import type { data_TemplateVOSwagger } from '../models/data_TemplateVOSwagger';
-import type { data_UpdateTemplateRequestSwagger } from '../models/data_UpdateTemplateRequestSwagger';
+import type { data_TemplateVO } from '../models/data_TemplateVO';
+import type { data_UpdateTemplateRequest } from '../models/data_UpdateTemplateRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class AdminTemplateService {
     /**
      * List templates
-     * List reward templates for campaign ops. Each item config follows template type; see TemplateVOSwagger and TemplateConfigSchemaRef.
+     * List reward templates for campaign ops. Each item config is FixTemplateConfigVO or DynamicTemplateConfigVO based on type. Optional status filter: DRAFT or PUBLISHED.
      * @param page Page number
      * @param size Page size
+     * @param status Template status filter
      * @returns any OK
      * @throws ApiError
      */
     public static getRewardMsV1AdminTemplates(
         page: number = 1,
         size: number = 20,
+        status?: 'DRAFT' | 'PUBLISHED',
     ): CancelablePromise<(data_BaseResponse & {
         data?: (data_PageResult & {
-            items?: Array<data_TemplateVOSwagger>;
+            items?: Array<data_TemplateVO>;
         });
     })> {
         return __request(OpenAPI, {
@@ -35,6 +36,7 @@ export class AdminTemplateService {
             query: {
                 'page': page,
                 'size': size,
+                'status': status,
             },
             errors: {
                 400: `Bad Request`,
@@ -44,13 +46,13 @@ export class AdminTemplateService {
     }
     /**
      * Create template
-     * Create a reward template for campaign ops. Config schema depends on type: FIXED uses FixTemplateConfigVO (amount); DYNAMIC uses DynamicTemplateConfigVO (base_metric, rate, optional cap). See CreateFixedTemplateRequestSwagger / CreateDynamicTemplateRequestSwagger and TemplateConfigSchemaRef definitions for examples.
+     * Create a reward template for campaign ops. When type=FIXED, config is FixTemplateConfigVO (amount only); when type=DYNAMIC, config is DynamicTemplateConfigVO (base_metric, rate, optional cap).
      * @param body Template payload
      * @returns any OK
      * @throws ApiError
      */
     public static postRewardMsV1AdminTemplates(
-        body: data_CreateTemplateRequestSwagger,
+        body: data_CreateTemplateRequest,
     ): CancelablePromise<(data_BaseResponse & {
         data?: data_CreateTemplateResponse;
     })> {
@@ -65,22 +67,8 @@ export class AdminTemplateService {
         });
     }
     /**
-     * Template config schemas
-     * Reference endpoint documenting FixTemplateConfigVO and DynamicTemplateConfigVO shapes.
-     * @returns any OK
-     * @throws ApiError
-     */
-    public static getRewardMsV1AdminTemplatesConfigSchemas(): CancelablePromise<(data_BaseResponse & {
-        data?: data_TemplateConfigSchemaRef;
-    })> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/reward-ms/v1/admin/templates/config-schemas',
-        });
-    }
-    /**
      * Update template
-     * Update template config in DRAFT status only. Config schema follows template type: FIXED uses amount; DYNAMIC uses base_metric, rate and optional cap.
+     * Update template config in DRAFT status only. When type=FIXED, config is FixTemplateConfigVO; when type=DYNAMIC, config is DynamicTemplateConfigVO.
      * @param templateId Template ID
      * @param body Template config payload
      * @returns any OK
@@ -88,9 +76,9 @@ export class AdminTemplateService {
      */
     public static putRewardMsV1AdminTemplates(
         templateId: number,
-        body: data_UpdateTemplateRequestSwagger,
+        body: data_UpdateTemplateRequest,
     ): CancelablePromise<(data_BaseResponse & {
-        data?: data_TemplateVOSwagger;
+        data?: data_TemplateVO;
     })> {
         return __request(OpenAPI, {
             method: 'PUT',

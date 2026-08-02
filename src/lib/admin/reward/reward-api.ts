@@ -15,7 +15,7 @@ import { AdminFinancePaymentService } from "@/lib/reward-api/services/AdminFinan
 import { AdminIssueRequestService } from "@/lib/reward-api/services/AdminIssueRequestService";
 import { AdminPaymentConfigService } from "@/lib/reward-api/services/AdminPaymentConfigService";
 import { AdminProjectService } from "@/lib/reward-api/services/AdminProjectService";
-import type { data_TemplateVOSwagger } from "@/lib/reward-api/models/data_TemplateVOSwagger";
+import type { data_TemplateVO } from "@/lib/reward-api/models/data_TemplateVO";
 import { AdminTemplateService } from "@/lib/reward-api/services/AdminTemplateService";
 import type {
   TemplateCreatePayload,
@@ -62,6 +62,24 @@ export async function fetchProjects(params: {
     page: data.page ?? params.page,
     size: data.size ?? params.size,
     total: data.total ?? items.length,
+  };
+}
+
+/** Ongoing projects for campaign budget import (issue_request.status=ONGOING). */
+export async function fetchOngoingProjects(): Promise<
+  PagedResult<ProjectDisplayRow>
+> {
+  const res = await AdminProjectService.getRewardMsV1AdminProjectsOngoing();
+  const data = unwrapRewardResponse(res);
+  const items = Array.isArray(data)
+    ? (data as unknown as Record<string, unknown>[])
+    : [];
+  const rows = normalizeProjectRows(items);
+  return {
+    rows,
+    page: 1,
+    size: rows.length,
+    total: rows.length,
   };
 }
 
@@ -273,10 +291,12 @@ export function financeDocToDisplayRow(doc: data_FinanceDocVO): FinanceDocDispla
 export async function fetchTemplates(params: {
   page: number;
   size: number;
+  status?: "DRAFT" | "PUBLISHED";
 }): Promise<PagedResult<TemplateDisplayRow>> {
   const res = await AdminTemplateService.getRewardMsV1AdminTemplates(
     params.page,
     params.size,
+    params.status,
   );
   const data = unwrapRewardResponse(res);
   const items = pageItems(data.items);
@@ -290,7 +310,7 @@ export async function fetchTemplates(params: {
 
 export async function fetchTemplateById(
   templateId: number,
-): Promise<data_TemplateVOSwagger> {
+): Promise<data_TemplateVO> {
   const res = await AdminTemplateService.getRewardMsV1AdminTemplates(1, 100);
   const data = unwrapRewardResponse(res);
   const items = pageItems(data.items);
@@ -301,14 +321,16 @@ export async function fetchTemplateById(
   if (!raw) {
     throw new Error("Template not found");
   }
-  return raw as unknown as data_TemplateVOSwagger;
+  return raw as unknown as data_TemplateVO;
 }
 
 export async function createTemplate(
   payload: TemplateCreatePayload,
 ): Promise<number> {
   const res = await AdminTemplateService.postRewardMsV1AdminTemplates(
-    payload as Parameters<typeof AdminTemplateService.postRewardMsV1AdminTemplates>[0],
+    payload as Parameters<
+      typeof AdminTemplateService.postRewardMsV1AdminTemplates
+    >[0],
   );
   const data = unwrapRewardResponse(res);
   if (data.template_id == null) {
@@ -320,10 +342,10 @@ export async function createTemplate(
 export async function updateTemplate(
   templateId: number,
   payload: TemplateUpdatePayload,
-): Promise<data_TemplateVOSwagger> {
+): Promise<data_TemplateVO> {
   const res = await AdminTemplateService.putRewardMsV1AdminTemplates(
     templateId,
-    payload as Parameters<typeof AdminTemplateService.putRewardMsV1AdminTemplates>[1],
+    payload,
   );
   return unwrapRewardResponse(res);
 }

@@ -1,18 +1,17 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-import type { data_TemplateConfigBody } from './data_TemplateConfigBody';
-export type data_TemplateVOSwagger = {
-    config?: data_TemplateConfigBody;
+export type data_TemplateVO = {
+    config?: any;
     created_at?: string;
     id?: number;
-    status?: data_TemplateVOSwagger.status;
-    type?: data_TemplateVOSwagger.type;
+    status?: data_TemplateVO.status;
+    type?: data_TemplateVO.type;
     unit?: string;
     updated_at?: string;
     voucher_type?: string;
 };
-export namespace data_TemplateVOSwagger {
+export namespace data_TemplateVO {
     export enum status {
         DRAFT = 'DRAFT',
         PUBLISHED = 'PUBLISHED',

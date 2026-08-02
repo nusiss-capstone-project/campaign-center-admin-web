@@ -1,5 +1,4 @@
-import type { data_TemplateConfigBody } from "@/lib/reward-api/models/data_TemplateConfigBody";
-import type { data_TemplateVOSwagger } from "@/lib/reward-api/models/data_TemplateVOSwagger";
+import type { data_TemplateVO } from "@/lib/reward-api/models/data_TemplateVO";
 import {
   formatMoneyDecimal,
   hasAtMostDecimalPlaces,
@@ -19,6 +18,11 @@ export type DynamicTemplateConfig = {
 
 export type TemplateConfigFormValues = FixTemplateConfig | DynamicTemplateConfig;
 
+/** Parsed config object before JSON-stringifying for the API. */
+export type TemplateConfigBody =
+  | { amount: string }
+  | { base_metric: string; rate: number; cap: string };
+
 export type TemplateFormValues = {
   type: TemplateType;
   unit: string;
@@ -30,11 +34,13 @@ export type TemplateCreatePayload = {
   type: TemplateType;
   unit: string;
   voucher_type: string;
-  config: data_TemplateConfigBody;
+  /** JSON string per swagger `data.CreateTemplateRequest.config`. */
+  config: string;
 };
 
 export type TemplateUpdatePayload = {
-  config: data_TemplateConfigBody;
+  /** JSON string per swagger `data.UpdateTemplateRequest.config`. */
+  config: string;
 };
 
 const NUMERIC_STRING_PATTERN = /^-?\d+(\.\d+)?$/;
@@ -88,9 +94,17 @@ function configRecordFromUnknown(
   config: unknown,
   type: TemplateType,
 ): TemplateConfigFormValues {
+  let raw: unknown = config;
+  if (typeof config === "string" && config.trim().startsWith("{")) {
+    try {
+      raw = JSON.parse(config);
+    } catch {
+      raw = {};
+    }
+  }
   const record =
-    config != null && typeof config === "object" && !Array.isArray(config)
-      ? (config as Record<string, unknown>)
+    raw != null && typeof raw === "object" && !Array.isArray(raw)
+      ? (raw as Record<string, unknown>)
       : {};
 
   if (type === "DYNAMIC") {
@@ -113,7 +127,7 @@ export function parseTemplateType(raw: unknown): TemplateType {
 }
 
 export function parseTemplateToFormValues(
-  template: data_TemplateVOSwagger,
+  template: data_TemplateVO,
 ): TemplateFormValues {
   const type = parseTemplateType(template.type);
   return {
@@ -127,7 +141,7 @@ export function parseTemplateToFormValues(
 function validateConfig(
   type: TemplateType,
   config: TemplateConfigFormValues,
-): data_TemplateConfigBody {
+): TemplateConfigBody {
   if (type === "FIXED") {
     const amount = (config as FixTemplateConfig).amount.trim();
     if (!amount) throw new Error("Amount is required.");
@@ -177,7 +191,7 @@ export function toCreateTemplatePayload(
     type: values.type,
     unit,
     voucher_type: voucherType,
-    config: validateConfig(values.type, values.config),
+    config: JSON.stringify(validateConfig(values.type, values.config)),
   };
 }
 
@@ -186,7 +200,7 @@ export function toUpdateTemplatePayload(
   config: TemplateConfigFormValues,
 ): TemplateUpdatePayload {
   return {
-    config: validateConfig(type, config),
+    config: JSON.stringify(validateConfig(type, config)),
   };
 }
 

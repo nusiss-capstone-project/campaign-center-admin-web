@@ -5,6 +5,7 @@ import type { data_BaseResponse } from '../models/data_BaseResponse';
 import type { data_CreateProjectRequest } from '../models/data_CreateProjectRequest';
 import type { data_CreateProjectResponse } from '../models/data_CreateProjectResponse';
 import type { data_PageResult } from '../models/data_PageResult';
+import type { data_ProjectVO } from '../models/data_ProjectVO';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -54,6 +55,23 @@ export class AdminProjectService {
             body: body,
             errors: {
                 400: `Bad Request`,
+                500: `Internal Server Error`,
+            },
+        });
+    }
+    /**
+     * List projects with ongoing issue requests
+     * List projects that currently have issue_request.status=ONGOING.
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static getRewardMsV1AdminProjectsOngoing(): CancelablePromise<(data_BaseResponse & {
+        data?: Array<data_ProjectVO>;
+    })> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/reward-ms/v1/admin/projects/ongoing',
+            errors: {
                 500: `Internal Server Error`,
             },
         });

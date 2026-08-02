@@ -8,12 +8,11 @@ export default function ForbiddenPage() {
         403 Forbidden
       </p>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight">
-        Admin access only
+        Access denied
       </h1>
       <p className="mt-3 max-w-md text-sm text-zinc-400">
-        This application is restricted to admin users. If you believe this is a
-        mistake, contact your administrator or sign in with a different
-        account.
+        Your account does not have permission to view this page. Sign in with a
+        different account or contact an administrator.
       </p>
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
         <Link
@@ -22,7 +21,7 @@ export default function ForbiddenPage() {
         >
           Sign in
         </Link>
-        <SignOutButton>
+        <SignOutButton redirectUrl="/sign-in">
           <button className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-emerald-400">
             Sign out
           </button>

@@ -1,7 +1,10 @@
 "use client";
 
 import type { TemplateDisplayRow } from "@/lib/admin/reward/reward-row";
-import { TemplatesPageHeader } from "@/components/admin/reward/templates-page-header";
+import {
+  TemplatesPageHeader,
+  type TemplateStatusFilter,
+} from "@/components/admin/reward/templates-page-header";
 import { TemplatesDataTable } from "@/components/admin/reward/templates-data-table";
 import { RewardAsyncListBody } from "@/components/admin/reward/reward-async-list-body";
 
@@ -10,6 +13,8 @@ type TemplatesDashboardProps = {
   total: number;
   loading: boolean;
   errorMessage: string | null;
+  statusFilter: TemplateStatusFilter;
+  onStatusFilterChange: (value: TemplateStatusFilter) => void;
   onRetry?: () => void;
 };
 
@@ -18,12 +23,18 @@ export function TemplatesDashboard({
   total,
   loading,
   errorMessage,
+  statusFilter,
+  onStatusFilterChange,
   onRetry,
 }: Readonly<TemplatesDashboardProps>) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="border-b border-white/10 px-6 py-6 lg:px-8">
-        <TemplatesPageHeader total={total} />
+        <TemplatesPageHeader
+          total={total}
+          statusFilter={statusFilter}
+          onStatusFilterChange={onStatusFilterChange}
+        />
       </div>
       <div className="flex flex-1 flex-col px-6 py-6 lg:px-8">
         <RewardAsyncListBody

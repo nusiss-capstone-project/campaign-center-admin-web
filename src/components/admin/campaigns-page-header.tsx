@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Bell, Search } from "lucide-react";
 
+import { useAdminCapabilities } from "@/components/admin/admin-access-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,8 @@ export function CampaignsPageHeader({
   searchQuery,
   onSearchChange,
 }: Readonly<CampaignsPageHeaderProps>) {
+  const caps = useAdminCapabilities();
+
   return (
     <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex flex-wrap items-center gap-3">
@@ -56,12 +59,14 @@ export function CampaignsPageHeader({
         >
           <Bell className="size-4" strokeWidth={1.75} />
         </Button>
-        <Button
-          asChild
-          className="h-9 border-0 bg-white px-4 text-sm font-medium text-black hover:bg-zinc-200"
-        >
-          <Link href="/admin/campaigns/create">Create Campaign</Link>
-        </Button>
+        {caps.canCreateCampaign ? (
+          <Button
+            asChild
+            className="h-9 border-0 bg-white px-4 text-sm font-medium text-black hover:bg-zinc-200"
+          >
+            <Link href="/admin/campaigns/create">Create Campaign</Link>
+          </Button>
+        ) : null}
       </div>
     </header>
   );

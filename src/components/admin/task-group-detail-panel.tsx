@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { TaskGroupStatusBadge } from "@/components/admin/task-group-status-badge";
+import { useAdminCapabilities } from "@/components/admin/admin-access-provider";
 import { Button } from "@/components/ui/button";
 import type { TaskDisplayRow, TaskGroupDisplayRow } from "@/lib/admin/task-row";
 import { allTasksPublished, isDraftStatus } from "@/lib/admin/task-row";
@@ -30,11 +31,15 @@ function groupQuery(group: TaskGroupDisplayRow): string {
 
 function DraftGroupActions({
   group,
+  canEditGroup,
+  canCreateTask,
   canPublishGroup,
   publishing,
   onPublishGroup,
 }: Readonly<{
   group: TaskGroupDisplayRow;
+  canEditGroup: boolean;
+  canCreateTask: boolean;
   canPublishGroup: boolean;
   publishing: boolean;
   onPublishGroup: () => void;
@@ -43,23 +48,27 @@ function DraftGroupActions({
 
   return (
     <>
-      <Button
-        asChild
-        variant="outline"
-        className="border-white/10 bg-zinc-900/50 text-zinc-200 hover:bg-zinc-800"
-      >
-        <Link href={`/admin/task-group/${group.id}/edit?${query}`}>
-          Edit Group
-        </Link>
-      </Button>
-      <Button
-        asChild
-        className="border-0 bg-white text-black hover:bg-zinc-200"
-      >
-        <Link href={`/admin/task-group/${group.id}/tasks/create?${query}`}>
-          Create Task
-        </Link>
-      </Button>
+      {canEditGroup ? (
+        <Button
+          asChild
+          variant="outline"
+          className="border-white/10 bg-zinc-900/50 text-zinc-200 hover:bg-zinc-800"
+        >
+          <Link href={`/admin/task-group/${group.id}/edit?${query}`}>
+            Edit Group
+          </Link>
+        </Button>
+      ) : null}
+      {canCreateTask ? (
+        <Button
+          asChild
+          className="border-0 bg-white text-black hover:bg-zinc-200"
+        >
+          <Link href={`/admin/task-group/${group.id}/tasks/create?${query}`}>
+            Create Task
+          </Link>
+        </Button>
+      ) : null}
       {canPublishGroup ? (
         <Button
           type="button"
@@ -104,26 +113,8 @@ function TaskCard({
       href={taskHref(groupId, task.id)}
       className="block rounded-xl border border-white/10 bg-zinc-900/60 p-4 transition-colors hover:border-white/20 hover:bg-zinc-900"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="font-medium text-white">{task.name}</h3>
-          <p className="mt-1 text-sm text-zinc-500">task_id: {task.id}</p>
-          {task.expression ? (
-            <p className="mt-2 font-mono text-xs text-zinc-400">
-              {task.expression}
-            </p>
-          ) : null}
-        </div>
-        <TaskGroupStatusBadge
-          status={task.status}
-          label={task.statusLabel}
-        />
-      </div>
-      <div className="mt-3 flex flex-wrap gap-4 text-xs text-zinc-500">
-        {task.startTime ? <span>Start: {task.startTime}</span> : null}
-        {task.endTime ? <span>End: {task.endTime}</span> : null}
-        <span>{task.conditionCount} conditions</span>
-      </div>
+      <h3 className="font-medium text-white">{task.name}</h3>
+      <p className="mt-1 text-sm text-zinc-500">id: {task.id}</p>
     </Link>
   );
 }
@@ -192,9 +183,13 @@ export function TaskGroupDetailPanel({
   publishing,
   onPublishGroup,
 }: Readonly<TaskGroupDetailPanelProps>) {
+  const caps = useAdminCapabilities();
   const groupIsDraft = isDraftStatus(group.status);
   const canPublishGroup =
-    groupIsDraft && allTasksPublished(tasks) && tasks.length > 0;
+    caps.canPublishTaskGroup &&
+    groupIsDraft &&
+    allTasksPublished(tasks) &&
+    tasks.length > 0;
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -222,6 +217,8 @@ export function TaskGroupDetailPanel({
           {groupIsDraft ? (
             <DraftGroupActions
               group={group}
+              canEditGroup={caps.canEditTaskGroup}
+              canCreateTask={caps.canCreateTask}
               canPublishGroup={canPublishGroup}
               publishing={publishing}
               onPublishGroup={onPublishGroup}

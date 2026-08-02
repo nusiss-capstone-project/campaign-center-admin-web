@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import type { data_TemplateVOSwagger } from "@/lib/reward-api/models/data_TemplateVOSwagger";
+import type { data_TemplateVO } from "@/lib/reward-api/models/data_TemplateVO";
 import {
   canEditTemplateStatus,
   useRewardCapabilities,
@@ -32,7 +32,7 @@ export default function AdminEditTemplatePage() {
   const templateId = Number(params.templateId);
   const caps = useRewardCapabilities();
 
-  const [template, setTemplate] = useState<data_TemplateVOSwagger | null>(null);
+  const [template, setTemplate] = useState<data_TemplateVO | null>(null);
   const [values, setValues] = useState<TemplateFormValues | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);

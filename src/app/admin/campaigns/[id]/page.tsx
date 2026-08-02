@@ -18,6 +18,7 @@ import {
 import { parseRouteId } from "@/lib/admin/parse-route-id";
 import { CampaignDetailsForm } from "@/components/admin/campaign-details-form";
 import { EditCampaignButton } from "@/components/admin/edit-campaign-button";
+import { useAdminCapabilities } from "@/components/admin/admin-access-provider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,6 +32,7 @@ import {
 export default function AdminCampaignDetailPage() {
   const params = useParams();
   const campaignId = parseRouteId(params.id);
+  const caps = useAdminCapabilities();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -122,7 +124,7 @@ export default function AdminCampaignDetailPage() {
               Performance
             </Link>
           </Button>
-          {canEdit ? (
+          {canEdit && caps.canEditCampaign ? (
             <EditCampaignButton
               campaignId={campaignId}
               statusCategory={statusCategory}

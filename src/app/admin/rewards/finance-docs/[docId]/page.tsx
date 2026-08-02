@@ -17,6 +17,7 @@ import type {
   IssueRequestDisplayRow,
 } from "@/lib/admin/reward/reward-row";
 import { rewardApiErrorMessage } from "@/lib/admin/reward/reward-utils";
+import { useRewardCapabilities } from "@/lib/admin/reward/reward-capabilities";
 import { FinanceDocDetailDashboard } from "@/components/admin/reward/finance-doc-detail-dashboard";
 import { Button } from "@/components/ui/button";
 
@@ -75,6 +76,8 @@ function FinanceDocErrorState({
 export default function AdminFinanceDocDetailPage() {
   const params = useParams<{ docId: string }>();
   const docId = params.docId;
+  const caps = useRewardCapabilities();
+  const canLoadPayments = caps.canRecordFinancePayment;
 
   const [doc, setDoc] = useState<data_FinanceDocVO | null>(null);
   const [payments, setPayments] = useState<FinancePaymentDisplayRow[]>([]);
@@ -101,7 +104,7 @@ export default function AdminFinanceDocDetailPage() {
   const loadAll = useCallback(
     async (cancelled: () => boolean) => {
       setLoadingDoc(true);
-      setLoadingPayments(true);
+      setLoadingPayments(canLoadPayments);
       setLoadingIssueRequests(true);
       setDocError(null);
       setPaymentsError(null);
@@ -118,16 +121,22 @@ export default function AdminFinanceDocDetailPage() {
         () => setLoadingDoc(false),
       );
 
-      await loadWithCancel(
-        cancelled,
-        () => fetchFinancePayments(docId),
-        setPayments,
-        (message) => {
-          setPaymentsError(message);
-          setPayments([]);
-        },
-        () => setLoadingPayments(false),
-      );
+      if (canLoadPayments) {
+        await loadWithCancel(
+          cancelled,
+          () => fetchFinancePayments(docId),
+          setPayments,
+          (message) => {
+            setPaymentsError(message);
+            setPayments([]);
+          },
+          () => setLoadingPayments(false),
+        );
+      } else if (!cancelled()) {
+        setPayments([]);
+        setPaymentsError(null);
+        setLoadingPayments(false);
+      }
 
       await loadWithCancel(
         cancelled,
@@ -151,7 +160,7 @@ export default function AdminFinanceDocDetailPage() {
         // Non-blocking for detail view
       }
     },
-    [docId],
+    [docId, canLoadPayments],
   );
 
   useEffect(() => {

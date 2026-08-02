@@ -2,51 +2,18 @@
 
 import { useMemo } from "react";
 
-export type RewardCapabilities = {
-  canViewProjects: boolean;
-  canCreateProject: boolean;
-  canViewFinanceDocs: boolean;
-  canCreateFinanceDoc: boolean;
-  canEditFinanceDoc: boolean;
-  canSubmitFinanceDoc: boolean;
-  canApproveFinanceDoc: boolean;
-  canRecordFinancePayment: boolean;
-  canCreateIssueRequest: boolean;
-  canEditIssueRequest: boolean;
-  canSubmitIssueRequest: boolean;
-  canApproveIssueRequest: boolean;
-  canViewTemplates: boolean;
-  canCreateTemplate: boolean;
-  canEditTemplate: boolean;
-  canPublishTemplate: boolean;
-};
+import { useAdminAccess } from "@/components/admin/admin-access-provider";
+import {
+  pickRewardCapabilities,
+  type RewardCapabilities,
+} from "@/lib/admin/rbac/capabilities";
 
-const ALL_CAPABILITIES: RewardCapabilities = {
-  canViewProjects: true,
-  canCreateProject: true,
-  canViewFinanceDocs: true,
-  canCreateFinanceDoc: true,
-  canEditFinanceDoc: true,
-  canSubmitFinanceDoc: true,
-  canApproveFinanceDoc: true,
-  canRecordFinancePayment: true,
-  canCreateIssueRequest: true,
-  canEditIssueRequest: true,
-  canSubmitIssueRequest: true,
-  canApproveIssueRequest: true,
-  canViewTemplates: true,
-  canCreateTemplate: true,
-  canEditTemplate: true,
-  canPublishTemplate: true,
-};
+export type { RewardCapabilities };
 
-/** Placeholder until Clerk metadata drives RBAC. */
-export function getRewardCapabilities(): RewardCapabilities {
-  return ALL_CAPABILITIES;
-}
-
+/** Reward-domain slice of the shared admin RBAC matrix. */
 export function useRewardCapabilities(): RewardCapabilities {
-  return useMemo(() => getRewardCapabilities(), []);
+  const { caps } = useAdminAccess();
+  return useMemo(() => pickRewardCapabilities(caps), [caps]);
 }
 
 export function canEditFinanceDocStatus(status: string): boolean {

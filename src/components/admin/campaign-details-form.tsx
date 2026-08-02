@@ -12,7 +12,7 @@ import { fetchTaskGroups, fetchTasksByGroup } from "@/lib/admin/task-admin-fetch
 import { fetchPublishedLandingPages } from "@/lib/admin/landing-pages-fetch";
 import type { LandingPageDisplayRow } from "@/lib/admin/landing-page-row";
 import {
-  fetchProjects,
+  fetchOngoingProjects,
   fetchTemplates,
 } from "@/lib/admin/reward/reward-api";
 import type { ProjectDisplayRow, TemplateDisplayRow } from "@/lib/admin/reward/reward-row";
@@ -104,9 +104,9 @@ function useCampaignImportLists(readOnly: boolean) {
       try {
         const [projectPage, templatePage, groups, publishedLandings] =
           await Promise.all([
-            fetchProjects({ page: 1, size: 100 }),
-            fetchTemplates({ page: 1, size: 100 }),
-            fetchTaskGroups(),
+            fetchOngoingProjects(),
+            fetchTemplates({ page: 1, size: 100, status: "PUBLISHED" }),
+            fetchTaskGroups({ status: "PUBLISHED" }),
             fetchPublishedLandingPages({ page: 1, pageSize: 100 }),
           ]);
         if (cancelled) return;
@@ -653,7 +653,7 @@ export function CampaignDetailsForm({
 
       <FormSection
         title="Budget"
-        description="Import a reward project (status filter coming later)."
+        description="Import an ongoing reward project."
       >
         {ro ? (
           <p className="text-sm text-zinc-300">

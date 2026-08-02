@@ -6,6 +6,7 @@ import { Eye, Pencil, Send } from "lucide-react";
 
 import type { LandingPageDisplayRow } from "@/lib/admin/landing-page-row";
 import { publishLandingPage } from "@/lib/admin/landing-pages-fetch";
+import { useAdminCapabilities } from "@/components/admin/admin-access-provider";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -26,6 +27,7 @@ export function LandingPagesDataTable({
   rows,
   onMutated,
 }: Readonly<LandingPagesDataTableProps>) {
+  const caps = useAdminCapabilities();
   const [publishingId, setPublishingId] = useState<number | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
 
@@ -115,38 +117,42 @@ export function LandingPagesDataTable({
                       <Eye className="size-4" strokeWidth={1.75} />
                     </Link>
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="text-zinc-400 hover:bg-white/5 hover:text-white"
-                    asChild
-                  >
-                    <Link
-                      href={`/admin/landing-pages/${row.id}/edit`}
-                      aria-label={`Edit ${row.title}`}
+                  {caps.canEditLandingPage ? (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-zinc-400 hover:bg-white/5 hover:text-white"
+                      asChild
                     >
-                      <Pencil className="size-4" strokeWidth={1.75} />
-                    </Link>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="text-zinc-400 hover:bg-white/5 hover:text-white disabled:opacity-40"
-                    aria-label="Publish landing page"
-                    disabled={
-                      row.statusCategory !== "draft" ||
-                      publishingId === row.id
-                    }
-                    title={
-                      row.statusCategory !== "draft"
-                        ? "Only draft landing pages can be published"
-                        : undefined
-                    }
-                    onClick={() => void handlePublish(row)}
-                  >
-                    <Send className="size-4" strokeWidth={1.75} />
-                  </Button>
+                      <Link
+                        href={`/admin/landing-pages/${row.id}/edit`}
+                        aria-label={`Edit ${row.title}`}
+                      >
+                        <Pencil className="size-4" strokeWidth={1.75} />
+                      </Link>
+                    </Button>
+                  ) : null}
+                  {caps.canPublishLandingPage ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-zinc-400 hover:bg-white/5 hover:text-white disabled:opacity-40"
+                      aria-label="Publish landing page"
+                      disabled={
+                        row.statusCategory !== "draft" ||
+                        publishingId === row.id
+                      }
+                      title={
+                        row.statusCategory !== "draft"
+                          ? "Only draft landing pages can be published"
+                          : undefined
+                      }
+                      onClick={() => void handlePublish(row)}
+                    >
+                      <Send className="size-4" strokeWidth={1.75} />
+                    </Button>
+                  ) : null}
                 </div>
               </TableCell>
             </TableRow>

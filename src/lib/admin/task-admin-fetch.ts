@@ -11,7 +11,7 @@ import { withClerkAuthorization } from "@/lib/auth/clerk-token";
 
 function buildTaskApiUrl(path: string): string {
   const p = path.startsWith("/") ? path : `/${path}`;
-  return buildPublicApiUrl(`/task-ms/v1${p}`);
+  return buildPublicApiUrl(`/task-ms/v1/admin${p}`);
 }
 
 function unwrapTaskEnvelope<T>(body: TaskEnvelope<T>): T {
@@ -38,8 +38,13 @@ export async function fetchTaskJsonEnvelope<T = unknown>(
   return unwrapTaskEnvelope(body);
 }
 
-export function taskGroupsListUrl(): string {
-  return buildTaskApiUrl("/task-groups");
+export function taskGroupsListUrl(params?: { status?: string }): string {
+  const base = buildTaskApiUrl("/task-groups");
+  const status = params?.status?.trim();
+  if (!status) return base;
+  const usp = new URLSearchParams();
+  usp.set("status", status);
+  return `${base}?${usp.toString()}`;
 }
 
 export function taskGroupPublishUrl(taskGroupId: number): string {
@@ -66,10 +71,13 @@ export function dataMetricOperatorsUrl(): string {
   return buildTaskApiUrl("/data-metric-operators");
 }
 
-export async function fetchTaskGroups(): Promise<TaskGroupVO[]> {
-  const data = await fetchTaskJsonEnvelope<TaskGroupVO[]>(taskGroupsListUrl(), {
-    method: "GET",
-  });
+export async function fetchTaskGroups(params?: {
+  status?: string;
+}): Promise<TaskGroupVO[]> {
+  const data = await fetchTaskJsonEnvelope<TaskGroupVO[]>(
+    taskGroupsListUrl(params),
+    { method: "GET" },
+  );
   return Array.isArray(data) ? data : [];
 }
 
