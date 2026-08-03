@@ -73,8 +73,6 @@ export function AdminAccessProvider({
         }
       } catch (e) {
         if (cancelled) return;
-        // Ignore failures while session is ending / already signed out.
-        if (!isSignedIn) return;
         setUser(null);
         setError(e instanceof Error ? e.message : "Failed to load current user");
         router.replace("/forbidden");

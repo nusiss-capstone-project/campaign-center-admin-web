@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { uploadLandingBannerImage } from "@/lib/admin/landing-pages-fetch";
@@ -20,6 +20,12 @@ type LandingBannerFieldProps = {
   readOnly: boolean;
   onChange?: (url: string) => void;
 };
+
+function bannerUploadLabel(uploading: boolean, hasValue: boolean): string {
+  if (uploading) return "Uploading…";
+  if (hasValue) return "Replace image";
+  return "Upload image";
+}
 
 export function LandingBannerField({
   value,
@@ -55,6 +61,36 @@ export function LandingBannerField({
     }
   }
 
+  const previewStyle = {
+    width: BANNER_PREVIEW_WIDTH,
+    height: BANNER_PREVIEW_HEIGHT,
+    maxWidth: "100%",
+  } as const;
+
+  let bannerPreview: ReactNode;
+  if (value) {
+    bannerPreview = (
+      // eslint-disable-next-line @next/next/no-img-element -- remote OSS URLs; fixed preview size
+      <img
+        src={value}
+        alt="Landing page banner"
+        width={BANNER_PREVIEW_WIDTH}
+        height={BANNER_PREVIEW_HEIGHT}
+        className="rounded-lg border border-white/10 object-cover bg-zinc-950"
+        style={previewStyle}
+      />
+    );
+  } else {
+    bannerPreview = (
+      <div
+        className="flex items-center justify-center rounded-lg border border-dashed border-white/10 bg-zinc-950/50 text-zinc-600"
+        style={previewStyle}
+      >
+        No banner
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-2 text-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -76,38 +112,13 @@ export function LandingBannerField({
               disabled={uploading}
               onClick={() => inputRef.current?.click()}
             >
-              {uploading ? "Uploading…" : value ? "Replace image" : "Upload image"}
+              {bannerUploadLabel(uploading, Boolean(value))}
             </Button>
           </>
         ) : null}
       </div>
 
-      {value ? (
-        // eslint-disable-next-line @next/next/no-img-element -- remote OSS URLs; fixed preview size
-        <img
-          src={value}
-          alt="Landing page banner"
-          width={BANNER_PREVIEW_WIDTH}
-          height={BANNER_PREVIEW_HEIGHT}
-          className="rounded-lg border border-white/10 object-cover bg-zinc-950"
-          style={{
-            width: BANNER_PREVIEW_WIDTH,
-            height: BANNER_PREVIEW_HEIGHT,
-            maxWidth: "100%",
-          }}
-        />
-      ) : (
-        <div
-          className="flex items-center justify-center rounded-lg border border-dashed border-white/10 bg-zinc-950/50 text-zinc-600"
-          style={{
-            width: BANNER_PREVIEW_WIDTH,
-            height: BANNER_PREVIEW_HEIGHT,
-            maxWidth: "100%",
-          }}
-        >
-          No banner
-        </div>
-      )}
+      {bannerPreview}
 
       {error ? (
         <p className="text-sm text-red-400" role="alert">

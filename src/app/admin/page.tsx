@@ -76,6 +76,13 @@ const HOME_LINKS: HomeLink[] = [
   },
 ];
 
+function welcomeHeading(loading: boolean, username: string | undefined): string {
+  if (loading) return "Loading…";
+  const name = username?.trim();
+  if (name) return `Welcome, ${name}`;
+  return "Welcome";
+}
+
 export default function AdminHomePage() {
   const { user, roleLabel, caps, loading, error } = useAdminAccess();
   const links = HOME_LINKS.filter((item) => item.visible(caps));
@@ -87,9 +94,7 @@ export default function AdminHomePage() {
           Home
         </p>
         <h1 className="text-2xl font-semibold tracking-tight text-white">
-          {loading
-            ? "Loading…"
-            : `Welcome${user?.username ? `, ${user.username}` : ""}`}
+          {welcomeHeading(loading, user?.username)}
         </h1>
         <p className="text-sm text-zinc-500">
           {error
