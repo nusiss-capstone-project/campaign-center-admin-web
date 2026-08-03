@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { LandingDetailsForm } from "@/components/admin/landing-details-form";
 import { LandingLanguagePanel } from "@/components/admin/landing-language-panel";
+import { useAdminCapabilities } from "@/components/admin/admin-access-provider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,6 +32,7 @@ import { useLandingLocaleSelection } from "@/lib/admin/use-landing-locale-select
 export default function AdminLandingPageDetailPage() {
   const params = useParams();
   const landingPageId = parseRouteId(params?.id);
+  const caps = useAdminCapabilities();
 
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -141,7 +143,7 @@ export default function AdminLandingPageDetailPage() {
         <Button variant="outline" asChild className="border-white/10 bg-zinc-900/50">
           <Link href="/admin/landing-pages">← Landing pages</Link>
         </Button>
-        {canEdit ? (
+        {canEdit && caps.canEditLandingPage ? (
           <Button asChild className="border-0 bg-white text-black hover:bg-zinc-200">
             <Link href={`/admin/landing-pages/${landingPageId}/edit`}>Edit</Link>
           </Button>

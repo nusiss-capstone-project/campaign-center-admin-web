@@ -1,6 +1,7 @@
-import type { api_LandingPageBody } from "@/lib/api/models/api_LandingPageBody";
-import type { api_GenerateLandingTranslationReq } from "@/lib/api/models/api_GenerateLandingTranslationReq";
-import type { api_PutLandingTranslationReq } from "@/lib/api/models/api_PutLandingTranslationReq";
+import type { data_LandingPageBody } from "@/lib/api/models/data_LandingPageBody";
+import type { data_GenerateLandingTranslationReq } from "@/lib/api/models/data_GenerateLandingTranslationReq";
+import type { data_PutLandingTranslationReq } from "@/lib/api/models/data_PutLandingTranslationReq";
+import { AdminImagesService } from "@/lib/api/services/AdminImagesService";
 import { AdminLandingPageService } from "@/lib/api/services/AdminLandingPageService";
 import { ApiError } from "@/lib/api/core/ApiError";
 import type { StandardEnvelope } from "@/lib/admin/campaign-admin-api";
@@ -72,9 +73,18 @@ export async function fetchLandingPageDetail(
   return res.data ?? null;
 }
 
+export async function uploadLandingBannerImage(file: File): Promise<string> {
+  const res = await AdminImagesService.postAdminImagesUpload(file);
+  const url = unwrapGeneratedEnvelope(res)?.url?.trim();
+  if (!url) {
+    throw new Error(res.message ?? "Upload succeeded but no image URL returned");
+  }
+  return url;
+}
+
 export async function updateLandingPage(
   landingPageId: number,
-  payload: api_LandingPageBody,
+  payload: data_LandingPageBody,
 ): Promise<void> {
   const url = landingPageDetailUrl(landingPageId);
   const res = await fetchJsonEnvelope(url, {
@@ -153,7 +163,7 @@ export async function fetchLandingPageLocaleDetail(
 
 export async function generateLandingPageTranslation(
   landingPageId: number,
-  payload: api_GenerateLandingTranslationReq,
+  payload: data_GenerateLandingTranslationReq,
 ): Promise<unknown | null> {
   const res =
     await AdminLandingPageService.postAdminLandingPagesTranslationsGenerate(
@@ -166,7 +176,7 @@ export async function generateLandingPageTranslation(
 export async function saveLandingPageTranslation(
   landingPageId: number,
   lang: string,
-  payload: api_PutLandingTranslationReq,
+  payload: data_PutLandingTranslationReq,
 ): Promise<void> {
   const res = await AdminLandingPageService.putAdminLandingPagesTranslations(
     landingPageId,

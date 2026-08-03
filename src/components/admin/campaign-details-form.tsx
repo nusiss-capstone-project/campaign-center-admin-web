@@ -12,7 +12,7 @@ import { fetchTaskGroups, fetchTasksByGroup } from "@/lib/admin/task-admin-fetch
 import { fetchPublishedLandingPages } from "@/lib/admin/landing-pages-fetch";
 import type { LandingPageDisplayRow } from "@/lib/admin/landing-page-row";
 import {
-  fetchProjects,
+  fetchOngoingProjects,
   fetchTemplates,
 } from "@/lib/admin/reward/reward-api";
 import type { ProjectDisplayRow, TemplateDisplayRow } from "@/lib/admin/reward/reward-row";
@@ -104,9 +104,9 @@ function useCampaignImportLists(readOnly: boolean) {
       try {
         const [projectPage, templatePage, groups, publishedLandings] =
           await Promise.all([
-            fetchProjects({ page: 1, size: 100 }),
-            fetchTemplates({ page: 1, size: 100 }),
-            fetchTaskGroups(),
+            fetchOngoingProjects(),
+            fetchTemplates({ page: 1, size: 100, status: "PUBLISHED" }),
+            fetchTaskGroups({ status: "PUBLISHED" }),
             fetchPublishedLandingPages({ page: 1, pageSize: 100 }),
           ]);
         if (cancelled) return;
@@ -123,7 +123,7 @@ function useCampaignImportLists(readOnly: boolean) {
         if (!cancelled) setLoadingImports(false);
       }
     }
-    void load();
+    load().catch(() => undefined);
     return () => {
       cancelled = true;
     };
@@ -220,7 +220,7 @@ type CampaignTaskRewardsSectionProps = {
   projects: ProjectDisplayRow[];
   templates: TemplateDisplayRow[];
   taskGroups: TaskGroupVO[];
-  onSelectTaskGroup: (taskGroupId: string) => void;
+  onSelectTaskGroup: (taskGroupId: string) => void | Promise<void>;
   onSelectGroupReward: (templateId: string) => void;
   onSelectTaskTemplate: (taskId: string, templateId: string) => void;
 };
@@ -278,7 +278,9 @@ function CampaignTaskRewardsSection({
             <span className="text-zinc-400">Task group</span>
             <Select
               value={values.taskGroupId || NONE}
-              onValueChange={(v) => void onSelectTaskGroup(v)}
+              onValueChange={(v) => {
+                Promise.resolve(onSelectTaskGroup(v)).catch(() => undefined);
+              }}
               disabled={loadingImports || loadingTasks}
             >
               <SelectTrigger className={SELECT_TRIGGER_CLASS}>
@@ -651,7 +653,7 @@ export function CampaignDetailsForm({
 
       <FormSection
         title="Budget"
-        description="Import a reward project (status filter coming later)."
+        description="Import an ongoing reward project."
       >
         {ro ? (
           <p className="text-sm text-zinc-300">

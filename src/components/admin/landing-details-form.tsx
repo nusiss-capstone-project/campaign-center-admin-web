@@ -1,6 +1,8 @@
 "use client";
 
 import type { LandingPageFormValues } from "@/lib/admin/landing-page-form-values";
+import { LandingBannerField } from "@/components/admin/landing-banner-field";
+import { LandingRepeatableItemsEditor } from "@/components/admin/landing-repeatable-items-editor";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -10,6 +12,7 @@ type LandingDetailsFormProps = {
   onChange?: (next: LandingPageFormValues) => void;
   statusLabel?: string | null;
   defaultLangReadOnly?: boolean;
+  /** Banner is language-agnostic; only editable on default-language content. */
   bannerReadOnly?: boolean;
 };
 
@@ -65,17 +68,11 @@ export function LandingDetailsForm({
           className={fieldClass}
         />
       </label>
-      <label className="grid gap-1.5 text-sm">
-        <span className="text-zinc-400">Banner image URL</span>
-        <Input
-          value={values.bannerImageUrl}
-          onChange={(e) => set({ bannerImageUrl: e.target.value })}
-          disabled={ro || bannerReadOnly}
-          readOnly={ro || bannerReadOnly}
-          required={!ro}
-          className={fieldClass}
-        />
-      </label>
+      <LandingBannerField
+        value={values.bannerImageUrl}
+        readOnly={ro || bannerReadOnly}
+        onChange={(bannerImageUrl) => set({ bannerImageUrl })}
+      />
       <label className="grid gap-1.5 text-sm">
         <span className="text-zinc-400">Description</span>
         <Textarea
@@ -100,6 +97,18 @@ export function LandingDetailsForm({
           className={fieldClass}
         />
       </label>
+      <LandingRepeatableItemsEditor
+        label="Steps"
+        items={values.steps}
+        readOnly={ro}
+        onChange={(steps) => set({ steps })}
+      />
+      <LandingRepeatableItemsEditor
+        label="FAQ"
+        items={values.faq}
+        readOnly={ro}
+        onChange={(faq) => set({ faq })}
+      />
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import type { data_TemplateVOSwagger } from "@/lib/reward-api/models/data_TemplateVOSwagger";
+import type { data_TemplateVO } from "@/lib/reward-api/models/data_TemplateVO";
 import {
   canEditTemplateStatus,
   canPublishTemplateStatus,
@@ -21,7 +21,7 @@ import { TemplateStatusBadge } from "@/components/admin/reward/template-status-b
 import { Button } from "@/components/ui/button";
 
 type TemplateDetailDashboardProps = {
-  template: data_TemplateVOSwagger;
+  template: data_TemplateVO;
   onRefresh: () => void;
 };
 

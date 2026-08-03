@@ -1,6 +1,6 @@
 import type { data_FinanceDocVO } from "@/lib/reward-api/models/data_FinanceDocVO";
 import type { data_PaymentConfigVO } from "@/lib/reward-api/models/data_PaymentConfigVO";
-import type { data_TemplateVOSwagger } from "@/lib/reward-api/models/data_TemplateVOSwagger";
+import type { data_TemplateVO } from "@/lib/reward-api/models/data_TemplateVO";
 import {
   configSummary,
   parseTemplateType,
@@ -243,7 +243,7 @@ export function normalizeTemplateRows(
 }
 
 export function templateVoToRecord(
-  template: data_TemplateVOSwagger,
+  template: data_TemplateVO,
 ): Record<string, unknown> {
   return template as unknown as Record<string, unknown>;
 }

@@ -92,6 +92,7 @@ export function FinanceDocDetailDashboard({
     caps.canRecordFinancePayment &&
     caps.canCreateIssueRequest &&
     canManageFinanceDocWorkflow(status);
+  const showPaymentsTab = caps.canRecordFinancePayment;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -117,7 +118,9 @@ export function FinanceDocDetailDashboard({
         <Tabs defaultValue="overview">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="payments">Disbursements</TabsTrigger>
+            {showPaymentsTab ? (
+              <TabsTrigger value="payments">Disbursements</TabsTrigger>
+            ) : null}
             <TabsTrigger value="issue-requests">Issue Requests</TabsTrigger>
           </TabsList>
 
@@ -162,14 +165,16 @@ export function FinanceDocDetailDashboard({
             </div>
           </TabsContent>
 
-          <TabsContent value="payments" className="mt-6">
-            <FinancePaymentsTab
-              rows={payments}
-              loading={loadingPayments}
-              errorMessage={errorPayments}
-              onRetry={onRefresh}
-            />
-          </TabsContent>
+          {showPaymentsTab ? (
+            <TabsContent value="payments" className="mt-6">
+              <FinancePaymentsTab
+                rows={payments}
+                loading={loadingPayments}
+                errorMessage={errorPayments}
+                onRetry={onRefresh}
+              />
+            </TabsContent>
+          ) : null}
 
           <TabsContent value="issue-requests" className="mt-6">
             <IssueRequestsTab

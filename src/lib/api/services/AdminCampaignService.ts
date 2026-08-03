@@ -1,6 +1,7 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
+import type { data_CampaignListVO } from '../models/data_CampaignListVO';
 import type { data_CampaignVO } from '../models/data_CampaignVO';
 import type { data_CreateCampaignReq } from '../models/data_CreateCampaignReq';
 import type { data_PublishOperatorReq } from '../models/data_PublishOperatorReq';
@@ -15,7 +16,7 @@ export class AdminCampaignService {
      * @param pageSize Page size (default 10)
      * @param status Campaign status filter
      * @param campaignId Campaign ID filter
-     * @returns data_StandardResponse success
+     * @returns any success
      * @throws ApiError
      */
     public static getAdminCampaigns(
@@ -23,7 +24,12 @@ export class AdminCampaignService {
         pageSize?: number,
         status?: number,
         campaignId?: number,
-    ): CancelablePromise<data_StandardResponse> {
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: {
+            items?: Array<data_CampaignListVO>;
+            total?: number;
+        };
+    })> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/admin/campaigns',
@@ -41,12 +47,16 @@ export class AdminCampaignService {
     /**
      * Create campaign (admin)
      * @param body Campaign name
-     * @returns data_StandardResponse success
+     * @returns any success
      * @throws ApiError
      */
     public static postAdminCampaigns(
         body: data_CreateCampaignReq,
-    ): CancelablePromise<data_StandardResponse> {
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: {
+            campaignId?: number;
+        };
+    })> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/admin/campaigns',
@@ -60,12 +70,14 @@ export class AdminCampaignService {
     /**
      * Get campaign detail (admin)
      * @param campaignId Campaign ID
-     * @returns data_StandardResponse success
+     * @returns any success
      * @throws ApiError
      */
     public static getAdminCampaigns1(
         campaignId: number,
-    ): CancelablePromise<data_StandardResponse> {
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: data_CampaignVO;
+    })> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/admin/campaigns/{campaignId}',
@@ -81,13 +93,15 @@ export class AdminCampaignService {
      * Publish campaign (admin)
      * @param campaignId Campaign ID
      * @param body Operator
-     * @returns data_StandardResponse success
+     * @returns any success
      * @throws ApiError
      */
     public static postAdminCampaignsPublish(
         campaignId: number,
         body: data_PublishOperatorReq,
-    ): CancelablePromise<data_StandardResponse> {
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: data_CampaignVO;
+    })> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/admin/campaigns/{campaignId}/publish',
@@ -104,12 +118,17 @@ export class AdminCampaignService {
     /**
      * Create campaign version (admin)
      * @param campaignId Campaign ID
-     * @returns data_StandardResponse success
+     * @returns any success; returns existing draft version when latest is still draft
      * @throws ApiError
      */
     public static postAdminCampaignsVersions(
         campaignId: number,
-    ): CancelablePromise<data_StandardResponse> {
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: {
+            campaignId?: number;
+            version?: number;
+        };
+    })> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/admin/campaigns/{campaignId}/versions',
@@ -127,14 +146,16 @@ export class AdminCampaignService {
      * @param campaignId Campaign ID
      * @param version Version
      * @param body Draft content; read-only fields are ignored
-     * @returns data_StandardResponse success
+     * @returns any updated campaign draft
      * @throws ApiError
      */
     public static putAdminCampaignsVersions(
         campaignId: number,
         version: number,
         body: data_CampaignVO,
-    ): CancelablePromise<data_StandardResponse> {
+    ): CancelablePromise<(data_StandardResponse & {
+        data?: data_CampaignVO;
+    })> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/admin/campaigns/{campaignId}/versions/{version}',

@@ -27,7 +27,9 @@ import {
   emptyLandingPageFormValues,
   parseLandingPageDetailToFormValues,
   pickLandingPageStatus,
+  toGenerateLandingTranslationReq,
   toLandingPageBody,
+  toPutLandingTranslationReq,
 } from "@/lib/admin/landing-page-form-values";
 import { isValidRouteId, parseRouteId } from "@/lib/admin/parse-route-id";
 import { useLandingLocaleSelection } from "@/lib/admin/use-landing-locale-selection";
@@ -147,13 +149,14 @@ export default function AdminLandingPageEditPage() {
     setNotice(null);
     setGeneratingTranslation(true);
     try {
-      const generated = await generateLandingPageTranslation(landingPageId, {
-        sourceLang: defaultLang,
-        targetLang: selectedLang,
-        title: defaultValues.title,
-        description: defaultValues.description,
-        terms: defaultValues.terms,
-      });
+      const generated = await generateLandingPageTranslation(
+        landingPageId,
+        toGenerateLandingTranslationReq(
+          defaultValues,
+          defaultLang,
+          selectedLang,
+        ),
+      );
       if (!generated) {
         setNotice("No translated content returned.");
         return;
@@ -164,8 +167,10 @@ export default function AdminLandingPageEditPage() {
         title: parsed.title || values.title,
         description: parsed.description || values.description,
         terms: parsed.terms || values.terms,
+        steps: parsed.steps,
+        faq: parsed.faq,
         defaultLang,
-        bannerImageUrl: values.bannerImageUrl || defaultValues.bannerImageUrl,
+        bannerImageUrl: defaultValues.bannerImageUrl,
       });
       setNotice("Translation generated. Please review and save.");
     } catch (e) {
@@ -204,12 +209,11 @@ export default function AdminLandingPageEditPage() {
         router.push(`/admin/landing-pages/${landingPageId}`);
         return;
       }
-      await saveLandingPageTranslation(landingPageId, selectedLang, {
-        title: values.title.trim(),
-        description: values.description.trim(),
-        terms: values.terms.trim(),
-        operator: "admin",
-      });
+      await saveLandingPageTranslation(
+        landingPageId,
+        selectedLang,
+        toPutLandingTranslationReq(values),
+      );
       setTranslatedLangs((langs) =>
         langs.includes(selectedLang) ? langs : [...langs, selectedLang],
       );

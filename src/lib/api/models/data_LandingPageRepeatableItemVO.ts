@@ -1,7 +1,8 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-export type api_LandingPageTranslatedLangsData = {
-    langs?: Array<string>;
+export type data_LandingPageRepeatableItemVO = {
+    description?: string;
+    title?: string;
 };
 

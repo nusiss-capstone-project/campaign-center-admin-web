@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Bell } from "lucide-react";
 
+import { useAdminCapabilities } from "@/components/admin/admin-access-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,8 @@ export function LandingPagesPageHeader({
   statusFilter,
   onStatusFilterChange,
 }: Readonly<LandingPagesPageHeaderProps>) {
+  const caps = useAdminCapabilities();
+
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -56,12 +59,14 @@ export function LandingPagesPageHeader({
           >
             <Bell className="size-4" strokeWidth={1.75} />
           </Button>
-          <Button
-            asChild
-            className="h-9 border-0 bg-white px-4 text-sm font-medium text-black hover:bg-zinc-200"
-          >
-            <Link href="/admin/landing-pages/create">Create Landing Page</Link>
-          </Button>
+          {caps.canCreateLandingPage ? (
+            <Button
+              asChild
+              className="h-9 border-0 bg-white px-4 text-sm font-medium text-black hover:bg-zinc-200"
+            >
+              <Link href="/admin/landing-pages/create">Create Landing Page</Link>
+            </Button>
+          ) : null}
         </div>
       </header>
 

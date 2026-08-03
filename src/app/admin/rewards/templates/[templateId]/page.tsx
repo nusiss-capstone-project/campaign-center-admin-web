@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import type { data_TemplateVOSwagger } from "@/lib/reward-api/models/data_TemplateVOSwagger";
+import type { data_TemplateVO } from "@/lib/reward-api/models/data_TemplateVO";
 import { fetchTemplateById } from "@/lib/admin/reward/reward-api";
 import { rewardApiErrorMessage } from "@/lib/admin/reward/reward-utils";
 import { TemplateDetailDashboard } from "@/components/admin/reward/template-detail-dashboard";
@@ -14,7 +14,7 @@ export default function AdminTemplateDetailPage() {
   const params = useParams<{ templateId: string }>();
   const templateId = Number(params.templateId);
 
-  const [template, setTemplate] = useState<data_TemplateVOSwagger | null>(null);
+  const [template, setTemplate] = useState<data_TemplateVO | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);

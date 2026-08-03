@@ -1,8 +1,7 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-export type api_PutLandingTranslationData = {
-    landingPageId?: number;
-    lang?: string;
+export type data_UpdateTemplateRequest = {
+    config: string;
 };
 

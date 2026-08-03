@@ -6,6 +6,7 @@ import { BarChart3, Eye, MoreHorizontal, Pencil, Send } from "lucide-react";
 
 import type { CampaignDisplayRow } from "@/lib/admin/campaign-row";
 import { publishCampaign } from "@/lib/admin/campaign-admin-fetch";
+import { useAdminCapabilities } from "@/components/admin/admin-access-provider";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -32,6 +33,7 @@ export function CampaignsDataTable({
   rows,
   onCampaignsMutated,
 }: Readonly<CampaignsDataTableProps>) {
+  const caps = useAdminCapabilities();
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
   const [publishingId, setPublishingId] = useState<number | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
@@ -125,17 +127,20 @@ export function CampaignsDataTable({
                         <Eye className="size-4" strokeWidth={1.75} />
                       </Link>
                     </Button>
-                    <EditCampaignButton
-                      campaignId={row.id}
-                      statusCategory={row.statusCategory}
-                      variant="ghost"
-                      size="icon-sm"
-                      className="text-zinc-400 hover:bg-white/5 hover:text-white"
-                      onError={(message) => setBanner(message)}
-                    >
-                      <Pencil className="size-4" strokeWidth={1.75} />
-                    </EditCampaignButton>
-                    {row.statusCategory === "draft" ? (
+                    {caps.canEditCampaign ? (
+                      <EditCampaignButton
+                        campaignId={row.id}
+                        statusCategory={row.statusCategory}
+                        variant="ghost"
+                        size="icon-sm"
+                        className="text-zinc-400 hover:bg-white/5 hover:text-white"
+                        onError={(message) => setBanner(message)}
+                      >
+                        <Pencil className="size-4" strokeWidth={1.75} />
+                      </EditCampaignButton>
+                    ) : null}
+                    {caps.canPublishCampaign &&
+                    row.statusCategory === "draft" ? (
                       <Button
                         type="button"
                         variant="ghost"
@@ -181,15 +186,17 @@ export function CampaignsDataTable({
                         >
                           View Details
                         </Link>
-                        <EditCampaignButton
-                          campaignId={row.id}
-                          statusCategory={row.statusCategory}
-                          asMenuItem
-                          onStarted={() => setMenuOpenId(null)}
-                          onError={(message) => setBanner(message)}
-                        >
-                          Edit
-                        </EditCampaignButton>
+                        {caps.canEditCampaign ? (
+                          <EditCampaignButton
+                            campaignId={row.id}
+                            statusCategory={row.statusCategory}
+                            asMenuItem
+                            onStarted={() => setMenuOpenId(null)}
+                            onError={(message) => setBanner(message)}
+                          >
+                            Edit
+                          </EditCampaignButton>
+                        ) : null}
                         <Link
                           href={`/admin/campaigns/${row.id}/performance`}
                           className="block rounded-md px-3 py-2 text-sm text-white hover:bg-white/10"

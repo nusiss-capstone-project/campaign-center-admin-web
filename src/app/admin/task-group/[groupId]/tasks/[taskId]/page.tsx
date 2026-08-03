@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { TaskDetailsForm } from "@/components/admin/task-details-form";
+import { useAdminCapabilities } from "@/components/admin/admin-access-provider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -93,6 +94,8 @@ function useTaskDetail(groupId: number, taskId: number) {
 type TaskEditorFormProps = {
   values: TaskFormValues;
   readOnly: boolean;
+  canSave: boolean;
+  canPublish: boolean;
   metrics: DataMetricVO[];
   operators: MetricOperatorVO[];
   error: string | null;
@@ -107,6 +110,8 @@ type TaskEditorFormProps = {
 function TaskEditorForm({
   values,
   readOnly,
+  canSave,
+  canPublish,
   metrics,
   operators,
   error,
@@ -127,7 +132,7 @@ function TaskEditorForm({
         ) : null}
         <TaskDetailsForm
           values={values}
-          readOnly={readOnly}
+          readOnly={readOnly || !canSave}
           metrics={metrics}
           operators={operators}
           onChange={onChange}
@@ -144,24 +149,24 @@ function TaskEditorForm({
         >
           <Link href={backHref}>Back</Link>
         </Button>
-        {!readOnly ? (
-          <>
-            <Button
-              type="submit"
-              disabled={saving}
-              className="border-0 bg-white text-black hover:bg-zinc-200"
-            >
-              {saving ? "Saving..." : "Save Task"}
-            </Button>
-            <Button
-              type="button"
-              disabled={publishing}
-              onClick={onPublish}
-              className="border-0 bg-emerald-500 text-slate-950 hover:bg-emerald-400"
-            >
-              {publishing ? "Publishing..." : "Publish Task"}
-            </Button>
-          </>
+        {!readOnly && canSave ? (
+          <Button
+            type="submit"
+            disabled={saving}
+            className="border-0 bg-white text-black hover:bg-zinc-200"
+          >
+            {saving ? "Saving..." : "Save Task"}
+          </Button>
+        ) : null}
+        {!readOnly && canPublish ? (
+          <Button
+            type="button"
+            disabled={publishing}
+            onClick={onPublish}
+            className="border-0 bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+          >
+            {publishing ? "Publishing..." : "Publish Task"}
+          </Button>
         ) : null}
       </CardFooter>
     </form>
@@ -172,6 +177,7 @@ export default function AdminTaskDetailPage() {
   const params = useParams();
   const groupId = parseId(params?.groupId);
   const taskId = parseId(params?.taskId);
+  const caps = useAdminCapabilities();
 
   const { values, setValues, metrics, operators, loading, error, setError } =
     useTaskDetail(groupId, taskId);
@@ -237,6 +243,8 @@ export default function AdminTaskDetailPage() {
           <TaskEditorForm
             values={values}
             readOnly={readOnly}
+            canSave={caps.canEditTask}
+            canPublish={caps.canPublishTask}
             metrics={metrics}
             operators={operators}
             error={error}

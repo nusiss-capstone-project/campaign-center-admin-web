@@ -1,5 +1,13 @@
-import type { api_LandingPageBody } from "@/lib/api/models/api_LandingPageBody";
+import type { data_LandingPageBody } from "@/lib/api/models/data_LandingPageBody";
+import type { data_GenerateLandingTranslationReq } from "@/lib/api/models/data_GenerateLandingTranslationReq";
+import type { data_LandingPageRepeatableItemVO } from "@/lib/api/models/data_LandingPageRepeatableItemVO";
+import type { data_PutLandingTranslationReq } from "@/lib/api/models/data_PutLandingTranslationReq";
 import { pickCampaignStatus } from "@/lib/admin/campaign-form-values";
+
+export type LandingRepeatableItem = {
+  title: string;
+  description: string;
+};
 
 export type LandingPageFormValues = {
   title: string;
@@ -7,7 +15,13 @@ export type LandingPageFormValues = {
   bannerImageUrl: string;
   description: string;
   terms: string;
+  steps: LandingRepeatableItem[];
+  faq: LandingRepeatableItem[];
 };
+
+export function emptyLandingRepeatableItem(): LandingRepeatableItem {
+  return { title: "", description: "" };
+}
 
 export function emptyLandingPageFormValues(): LandingPageFormValues {
   return {
@@ -16,6 +30,8 @@ export function emptyLandingPageFormValues(): LandingPageFormValues {
     bannerImageUrl: "",
     description: "",
     terms: "",
+    steps: [],
+    faq: [],
   };
 }
 
@@ -26,6 +42,31 @@ function pickStr(o: Record<string, unknown>, ...keys: string[]): string {
     if (typeof v === "number" && Number.isFinite(v)) return String(v);
   }
   return "";
+}
+
+function normalizeRepeatableItems(raw: unknown): LandingRepeatableItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item) => {
+    if (!item || typeof item !== "object") {
+      return emptyLandingRepeatableItem();
+    }
+    const o = item as Record<string, unknown>;
+    return {
+      title: pickStr(o, "title"),
+      description: pickStr(o, "description", "desc", "body"),
+    };
+  });
+}
+
+function toRepeatablePayload(
+  items: LandingRepeatableItem[],
+): data_LandingPageRepeatableItemVO[] {
+  return items
+    .map((item) => ({
+      title: item.title.trim(),
+      description: item.description.trim(),
+    }))
+    .filter((item) => item.title || item.description);
 }
 
 export function parseLandingPageDetailToFormValues(
@@ -48,16 +89,50 @@ export function parseLandingPageDetailToFormValues(
     ),
     description: pickStr(o, "description", "body", "summary"),
     terms: pickStr(o, "terms", "termsHtml", "terms_text"),
+    steps: normalizeRepeatableItems(o.steps),
+    faq: normalizeRepeatableItems(o.faq),
   };
 }
 
-export function toLandingPageBody(v: LandingPageFormValues): api_LandingPageBody {
+export function toLandingPageBody(v: LandingPageFormValues): data_LandingPageBody {
   return {
     title: v.title.trim(),
     defaultLang: v.defaultLang.trim(),
     bannerImageUrl: v.bannerImageUrl.trim(),
     description: v.description.trim(),
     terms: v.terms.trim(),
+    steps: toRepeatablePayload(v.steps),
+    faq: toRepeatablePayload(v.faq),
+  };
+}
+
+export function toGenerateLandingTranslationReq(
+  v: LandingPageFormValues,
+  sourceLang: string,
+  targetLang: string,
+): data_GenerateLandingTranslationReq {
+  return {
+    sourceLang,
+    targetLang,
+    title: v.title.trim(),
+    description: v.description.trim(),
+    terms: v.terms.trim(),
+    steps: toRepeatablePayload(v.steps),
+    faq: toRepeatablePayload(v.faq),
+  };
+}
+
+export function toPutLandingTranslationReq(
+  v: LandingPageFormValues,
+  operator = "admin",
+): data_PutLandingTranslationReq {
+  return {
+    title: v.title.trim(),
+    description: v.description.trim(),
+    terms: v.terms.trim(),
+    steps: toRepeatablePayload(v.steps),
+    faq: toRepeatablePayload(v.faq),
+    operator,
   };
 }
 
