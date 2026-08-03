@@ -83,6 +83,47 @@ function welcomeHeading(loading: boolean, username: string | undefined): string 
   return "Welcome";
 }
 
+function HomeLinksBody({
+  loading,
+  links,
+}: Readonly<{
+  loading: boolean;
+  links: HomeLink[];
+}>) {
+  if (loading) {
+    return <p className="text-sm text-zinc-500">Loading available menus…</p>;
+  }
+  if (links.length === 0) {
+    return (
+      <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+        No modules are available for your role. Contact an administrator.
+      </p>
+    );
+  }
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {links.map(({ href, title, description, icon: Icon }) => (
+        <Link
+          key={href}
+          href={href}
+          className={cn(
+            "group rounded-xl border border-white/10 bg-zinc-900/50 p-5 transition-colors",
+            "hover:border-white/20 hover:bg-zinc-900",
+          )}
+        >
+          <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-800 text-zinc-200 ring-1 ring-white/10 transition group-hover:text-white">
+            <Icon className="size-4" strokeWidth={1.75} aria-hidden />
+          </div>
+          <h2 className="mt-4 text-sm font-semibold text-white">{title}</h2>
+          <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+            {description}
+          </p>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 export default function AdminHomePage() {
   const { user, roleLabel, caps, loading, error } = useAdminAccess();
   const links = HOME_LINKS.filter((item) => item.visible(caps));
@@ -103,34 +144,7 @@ export default function AdminHomePage() {
         </p>
       </header>
 
-      {loading ? (
-        <p className="text-sm text-zinc-500">Loading available menus…</p>
-      ) : links.length === 0 ? (
-        <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          No modules are available for your role. Contact an administrator.
-        </p>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {links.map(({ href, title, description, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "group rounded-xl border border-white/10 bg-zinc-900/50 p-5 transition-colors",
-                "hover:border-white/20 hover:bg-zinc-900",
-              )}
-            >
-              <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-800 text-zinc-200 ring-1 ring-white/10 transition group-hover:text-white">
-                <Icon className="size-4" strokeWidth={1.75} aria-hidden />
-              </div>
-              <h2 className="mt-4 text-sm font-semibold text-white">{title}</h2>
-              <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                {description}
-              </p>
-            </Link>
-          ))}
-        </div>
-      )}
+      <HomeLinksBody loading={loading} links={links} />
     </div>
   );
 }
