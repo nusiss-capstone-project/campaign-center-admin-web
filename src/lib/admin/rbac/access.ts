@@ -37,6 +37,7 @@ export function canAccessAdminPath(
     return (
       path.startsWith("/admin/campaigns") ||
       path.startsWith("/admin/landing-pages") ||
+      path.startsWith("/admin/user-groups") ||
       path.startsWith("/admin/task-group") ||
       path.startsWith("/admin/rewards") ||
       path.startsWith("/admin/help")

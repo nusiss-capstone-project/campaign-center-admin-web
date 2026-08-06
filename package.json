@@ -11,7 +11,8 @@
     "audit:high": "npm audit --audit-level=high",
     "ci:check": "npm run lint && npm run typecheck && npm run build",
     "gen:api": "openapi --input https://campaignhub.best/campaign-center-api/v1/swagger/doc.json --output src/lib/api --client fetch && node scripts/strip-generated-eslint-disable.mjs",
-    "gen:api:reward": "openapi --input https://campaignhub.best/reward-ms/v1/swagger/doc.json --output src/lib/reward-api --client fetch && node scripts/patch-reward-api-core.mjs && node scripts/strip-generated-eslint-disable.mjs"
+    "gen:api:reward": "openapi --input https://campaignhub.best/reward-ms/v1/swagger/doc.json --output src/lib/reward-api --client fetch && node scripts/patch-reward-api-core.mjs && node scripts/strip-generated-eslint-disable.mjs",
+    "gen:api:usergroup": "openapi --input https://campaignhub.best/usergroup-ms/v1/swagger/doc.json --output src/lib/usergroup-api --client fetch && node scripts/patch-usergroup-api-core.mjs && node scripts/strip-generated-eslint-disable.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.3.5",

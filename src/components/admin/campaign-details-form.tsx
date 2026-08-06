@@ -11,6 +11,8 @@ import {
 import { fetchTaskGroups, fetchTasksByGroup } from "@/lib/admin/task-admin-fetch";
 import { fetchPublishedLandingPages } from "@/lib/admin/landing-pages-fetch";
 import type { LandingPageDisplayRow } from "@/lib/admin/landing-page-row";
+import { fetchActiveUserGroups } from "@/lib/admin/user-group-fetch";
+import type { data_UserGroupListItemVO } from "@/lib/usergroup-api/models/data_UserGroupListItemVO";
 import {
   fetchOngoingProjects,
   fetchTemplates,
@@ -92,6 +94,7 @@ function useCampaignImportLists(readOnly: boolean) {
   const [templates, setTemplates] = useState<TemplateDisplayRow[]>([]);
   const [taskGroups, setTaskGroups] = useState<TaskGroupVO[]>([]);
   const [landingPages, setLandingPages] = useState<LandingPageDisplayRow[]>([]);
+  const [userGroups, setUserGroups] = useState<data_UserGroupListItemVO[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
   const [loadingImports, setLoadingImports] = useState(false);
 
@@ -102,18 +105,25 @@ function useCampaignImportLists(readOnly: boolean) {
       setLoadingImports(true);
       setImportError(null);
       try {
-        const [projectPage, templatePage, groups, publishedLandings] =
-          await Promise.all([
-            fetchOngoingProjects(),
-            fetchTemplates({ page: 1, size: 100, status: "PUBLISHED" }),
-            fetchTaskGroups({ status: "PUBLISHED" }),
-            fetchPublishedLandingPages({ page: 1, pageSize: 100 }),
-          ]);
+        const [
+          projectPage,
+          templatePage,
+          groups,
+          publishedLandings,
+          activeUserGroups,
+        ] = await Promise.all([
+          fetchOngoingProjects(),
+          fetchTemplates({ page: 1, size: 100, status: "PUBLISHED" }),
+          fetchTaskGroups({ status: "PUBLISHED" }),
+          fetchPublishedLandingPages({ page: 1, pageSize: 100 }),
+          fetchActiveUserGroups({ page: 1, pageSize: 200 }),
+        ]);
         if (cancelled) return;
         setProjects(projectPage.rows);
         setTemplates(templatePage.rows);
         setTaskGroups(groups);
         setLandingPages(publishedLandings);
+        setUserGroups(activeUserGroups);
       } catch (e) {
         if (cancelled) return;
         setImportError(
@@ -134,6 +144,7 @@ function useCampaignImportLists(readOnly: boolean) {
     templates,
     taskGroups,
     landingPages,
+    userGroups,
     importError,
     setImportError,
     loadingImports,
@@ -384,6 +395,7 @@ export function CampaignDetailsForm({
     templates,
     taskGroups,
     landingPages,
+    userGroups,
     importError,
     setImportError,
     loadingImports,
@@ -441,6 +453,18 @@ export function CampaignDetailsForm({
   function onSelectLandingPage(landingPageId: string) {
     set({
       landingPageId: landingPageId === NONE ? "" : landingPageId,
+    });
+  }
+
+  function onSelectUserGroup(groupId: string) {
+    if (groupId === NONE) {
+      set({ targetUserGroupId: "", targetUserGroupName: "" });
+      return;
+    }
+    const selected = userGroups.find((g) => String(g.id) === groupId);
+    set({
+      targetUserGroupId: groupId,
+      targetUserGroupName: selected?.name?.trim() ?? "",
     });
   }
 
@@ -592,31 +616,47 @@ export function CampaignDetailsForm({
 
       <FormSection
         title="Target user group"
-        description="Manual entry for now. Identity service list will be wired later."
+        description="Select a published (ACTIVE) user group."
       >
-        <div className="grid gap-4 sm:grid-cols-2">
+        {ro ? (
+          <p className="text-sm text-zinc-300">
+            {values.targetUserGroupId
+              ? `${values.targetUserGroupName || "Group"} (#${values.targetUserGroupId})`
+              : "—"}
+          </p>
+        ) : (
           <label className="grid gap-1.5 text-sm">
-            <span className="text-zinc-400">Group ID</span>
-            <Input
-              inputMode="numeric"
-              value={values.targetUserGroupId}
-              onChange={(e) => set({ targetUserGroupId: e.target.value })}
-              disabled={ro}
-              readOnly={ro}
-              className={FIELD_CLASS}
-            />
+            <span className="text-zinc-400">User group</span>
+            <Select
+              value={values.targetUserGroupId || NONE}
+              onValueChange={onSelectUserGroup}
+              disabled={loadingImports}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_CLASS}>
+                <SelectValue placeholder="Select user group" />
+              </SelectTrigger>
+              <SelectContent position="popper" className={SELECT_CONTENT_CLASS}>
+                <SelectItem value={NONE}>None</SelectItem>
+                {userGroups.map((group) =>
+                  group.id != null ? (
+                    <SelectItem key={group.id} value={String(group.id)}>
+                      {group.name || "Untitled"} (#{group.id})
+                    </SelectItem>
+                  ) : null,
+                )}
+                {values.targetUserGroupId &&
+                !userGroups.some(
+                  (g) => String(g.id) === values.targetUserGroupId,
+                ) ? (
+                  <SelectItem value={values.targetUserGroupId}>
+                    {values.targetUserGroupName || "Current"} (#
+                    {values.targetUserGroupId}) · not ACTIVE
+                  </SelectItem>
+                ) : null}
+              </SelectContent>
+            </Select>
           </label>
-          <label className="grid gap-1.5 text-sm">
-            <span className="text-zinc-400">Group name</span>
-            <Input
-              value={values.targetUserGroupName}
-              onChange={(e) => set({ targetUserGroupName: e.target.value })}
-              disabled={ro}
-              readOnly={ro}
-              className={FIELD_CLASS}
-            />
-          </label>
-        </div>
+        )}
       </FormSection>
 
       <FormSection

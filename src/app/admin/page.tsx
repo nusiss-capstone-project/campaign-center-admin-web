@@ -10,6 +10,7 @@ import {
   ListTodo,
   Megaphone,
   Settings,
+  Users,
 } from "lucide-react";
 
 import { useAdminAccess } from "@/components/admin/admin-access-provider";
@@ -38,6 +39,13 @@ const HOME_LINKS: HomeLink[] = [
     description: "Edit and publish landing page content.",
     icon: LayoutTemplate,
     visible: (c) => c.menuLandingPages,
+  },
+  {
+    href: "/admin/user-groups",
+    title: "User Groups",
+    description: "Define audience rule groups.",
+    icon: Users,
+    visible: (c) => c.menuUserGroups,
   },
   {
     href: "/admin/task-group",
