@@ -24,6 +24,7 @@ export type TemplateConfigBody =
   | { base_metric: string; rate: number; cap: string };
 
 export type TemplateFormValues = {
+  title: string;
   type: TemplateType;
   unit: string;
   voucherType: string;
@@ -31,6 +32,7 @@ export type TemplateFormValues = {
 };
 
 export type TemplateCreatePayload = {
+  title: string;
   type: TemplateType;
   unit: string;
   voucher_type: string;
@@ -38,6 +40,7 @@ export type TemplateCreatePayload = {
 };
 
 export type TemplateUpdatePayload = {
+  title?: string;
   config: TemplateConfigBody;
 };
 
@@ -61,6 +64,7 @@ export function emptyTemplateFormValues(
   type: TemplateType = "FIXED",
 ): TemplateFormValues {
   return {
+    title: "",
     type,
     unit: "",
     voucherType: "",
@@ -129,6 +133,7 @@ export function parseTemplateToFormValues(
 ): TemplateFormValues {
   const type = parseTemplateType(template.type);
   return {
+    title: template.title ?? "",
     type,
     unit: template.unit ?? "",
     voucherType: template.voucher_type ?? "",
@@ -180,12 +185,15 @@ function validateConfig(
 export function toCreateTemplatePayload(
   values: TemplateFormValues,
 ): TemplateCreatePayload {
+  const title = values.title.trim();
   const unit = values.unit.trim();
   const voucherType = values.voucherType.trim();
+  if (!title) throw new Error("Title is required.");
   if (!unit) throw new Error("Unit is required.");
   if (!voucherType) throw new Error("Voucher type is required.");
 
   return {
+    title,
     type: values.type,
     unit,
     voucher_type: voucherType,
@@ -194,11 +202,13 @@ export function toCreateTemplatePayload(
 }
 
 export function toUpdateTemplatePayload(
-  type: TemplateType,
-  config: TemplateConfigFormValues,
+  values: TemplateFormValues,
 ): TemplateUpdatePayload {
+  const title = values.title.trim();
+  if (!title) throw new Error("Title is required.");
   return {
-    config: validateConfig(type, config),
+    title,
+    config: validateConfig(values.type, values.config),
   };
 }
 

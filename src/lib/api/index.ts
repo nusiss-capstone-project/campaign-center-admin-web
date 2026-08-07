@@ -6,6 +6,7 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { data_AdminParticipantCampaignVO, data_AdminParticipantListData, data_AdminParticipantVO } from './models/data_AdminParticipant';
 export type { data_BudgetVO } from './models/data_BudgetVO';
 export type { data_CampaignListVO } from './models/data_CampaignListVO';
 export type { data_CampaignRewardRuleVO } from './models/data_CampaignRewardRuleVO';
@@ -42,5 +43,6 @@ export { AdminCampaignService } from './services/AdminCampaignService';
 export { AdminCampaignPerformanceService } from './services/AdminCampaignPerformanceService';
 export { AdminImagesService } from './services/AdminImagesService';
 export { AdminLandingPageService } from './services/AdminLandingPageService';
+export { AdminParticipantService } from './services/AdminParticipantService';
 export { HealthService } from './services/HealthService';
 export { UserCampaignService } from './services/UserCampaignService';

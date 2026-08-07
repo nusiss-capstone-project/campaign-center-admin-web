@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import type { data_BudgetVO } from "@/lib/reward-api/models/data_BudgetVO";
 import type { data_FinanceDocVO } from "@/lib/reward-api/models/data_FinanceDocVO";
 import type { data_PaymentConfigVO } from "@/lib/reward-api/models/data_PaymentConfigVO";
 import { data_ApproveIssueRequestRequest } from "@/lib/reward-api/models/data_ApproveIssueRequestRequest";
@@ -19,6 +20,7 @@ import type {
   IssueRequestDisplayRow,
 } from "@/lib/admin/reward/reward-row";
 import { rewardApiErrorMessage } from "@/lib/admin/reward/reward-utils";
+import { BudgetAvailableTotalList } from "@/components/admin/reward/budget-available-total";
 import { FinanceDocForm } from "@/components/admin/reward/finance-doc-form";
 import {
   FinanceDocDetailDialogs,
@@ -31,6 +33,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type FinanceDocDetailDashboardProps = {
   doc: data_FinanceDocVO;
+  projectBudgets: data_BudgetVO[];
+  loadingProjectBudgets: boolean;
+  errorProjectBudgets: string | null;
   payments: FinancePaymentDisplayRow[];
   issueRequests: IssueRequestDisplayRow[];
   issueRequestsTotal: number;
@@ -44,6 +49,9 @@ type FinanceDocDetailDashboardProps = {
 
 export function FinanceDocDetailDashboard({
   doc,
+  projectBudgets,
+  loadingProjectBudgets,
+  errorProjectBudgets,
   payments,
   issueRequests,
   issueRequestsTotal,
@@ -132,26 +140,43 @@ export function FinanceDocDetailDashboard({
 
           <TabsContent value="overview" className="mt-6">
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-xl border border-white/10 bg-zinc-900/40 p-5">
-                <h2 className="text-sm font-medium text-zinc-200">Metadata</h2>
-                <dl className="mt-4 grid gap-3 text-sm">
-                  <div className="grid grid-cols-[120px_1fr] gap-2">
-                    <dt className="text-zinc-500">Creator</dt>
-                    <dd className="text-zinc-300">{doc.creator ?? "—"}</dd>
+              <div className="flex flex-col gap-6">
+                <div className="rounded-xl border border-white/10 bg-zinc-900/40 p-5">
+                  <h2 className="text-sm font-medium text-zinc-200">Metadata</h2>
+                  <dl className="mt-4 grid gap-3 text-sm">
+                    <div className="grid grid-cols-[120px_1fr] gap-2">
+                      <dt className="text-zinc-500">Remark</dt>
+                      <dd className="text-zinc-300">{doc.remark ?? "—"}</dd>
+                    </div>
+                    <div className="grid grid-cols-[120px_1fr] gap-2">
+                      <dt className="text-zinc-500">Created</dt>
+                      <dd className="text-zinc-300">{doc.created_at ?? "—"}</dd>
+                    </div>
+                    <div className="grid grid-cols-[120px_1fr] gap-2">
+                      <dt className="text-zinc-500">Updated</dt>
+                      <dd className="text-zinc-300">{doc.updated_at ?? "—"}</dd>
+                    </div>
+                  </dl>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-zinc-900/40 p-5">
+                  <h2 className="text-sm font-medium text-zinc-200">
+                    Project budget
+                  </h2>
+                  <div className="mt-4">
+                    {loadingProjectBudgets ? (
+                      <p className="text-sm text-zinc-500">Loading budgets…</p>
+                    ) : errorProjectBudgets ? (
+                      <p className="text-sm text-red-300" role="alert">
+                        {errorProjectBudgets}
+                      </p>
+                    ) : (
+                      <BudgetAvailableTotalList
+                        budgets={projectBudgets}
+                        showUnit
+                      />
+                    )}
                   </div>
-                  <div className="grid grid-cols-[120px_1fr] gap-2">
-                    <dt className="text-zinc-500">Remark</dt>
-                    <dd className="text-zinc-300">{doc.remark ?? "—"}</dd>
-                  </div>
-                  <div className="grid grid-cols-[120px_1fr] gap-2">
-                    <dt className="text-zinc-500">Created</dt>
-                    <dd className="text-zinc-300">{doc.created_at ?? "—"}</dd>
-                  </div>
-                  <div className="grid grid-cols-[120px_1fr] gap-2">
-                    <dt className="text-zinc-500">Updated</dt>
-                    <dd className="text-zinc-300">{doc.updated_at ?? "—"}</dd>
-                  </div>
-                </dl>
+                </div>
               </div>
               <div className="rounded-xl border border-white/10 bg-zinc-900/40 p-5">
                 <h2 className="text-sm font-medium text-zinc-200">

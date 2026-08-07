@@ -3,6 +3,7 @@
 /* tslint:disable */
 export type data_CreateTemplateRequest = {
     config: Record<string, any>;
+    title: string;
     type: data_CreateTemplateRequest.type;
     unit: string;
     voucher_type: string;

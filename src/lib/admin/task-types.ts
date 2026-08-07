@@ -44,4 +44,12 @@ export type PublishStatusVO = {
   status: string;
 };
 
+export type UserTaskProgressVO = {
+  id?: number;
+  name?: string;
+  status?: string;
+  created_at?: number;
+  updated_at?: number;
+};
+
 export type TaskStatus = "DRAFT" | "PUBLISHED";

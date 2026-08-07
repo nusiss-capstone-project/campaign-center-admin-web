@@ -4,13 +4,12 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import type { data_FinanceDocVO } from "@/lib/reward-api/models/data_FinanceDocVO";
-import type { data_PaymentConfigVO } from "@/lib/reward-api/models/data_PaymentConfigVO";
 import {
   fetchFinanceDocDetail,
   fetchFinancePayments,
   fetchIssueRequests,
   fetchPaymentConfigs,
+  fetchProjectBudgets,
 } from "@/lib/admin/reward/reward-api";
 import type {
   FinancePaymentDisplayRow,
@@ -20,6 +19,9 @@ import { rewardApiErrorMessage } from "@/lib/admin/reward/reward-utils";
 import { useRewardCapabilities } from "@/lib/admin/reward/reward-capabilities";
 import { FinanceDocDetailDashboard } from "@/components/admin/reward/finance-doc-detail-dashboard";
 import { Button } from "@/components/ui/button";
+import type { data_BudgetVO } from "@/lib/reward-api/models/data_BudgetVO";
+import type { data_FinanceDocVO } from "@/lib/reward-api/models/data_FinanceDocVO";
+import type { data_PaymentConfigVO } from "@/lib/reward-api/models/data_PaymentConfigVO";
 
 async function loadWithCancel<T>(
   cancelled: () => boolean,
@@ -80,6 +82,7 @@ export default function AdminFinanceDocDetailPage() {
   const canLoadPayments = caps.canRecordFinancePayment;
 
   const [doc, setDoc] = useState<data_FinanceDocVO | null>(null);
+  const [projectBudgets, setProjectBudgets] = useState<data_BudgetVO[]>([]);
   const [payments, setPayments] = useState<FinancePaymentDisplayRow[]>([]);
   const [issueRequests, setIssueRequests] = useState<IssueRequestDisplayRow[]>(
     [],
@@ -90,9 +93,13 @@ export default function AdminFinanceDocDetailPage() {
   );
 
   const [loadingDoc, setLoadingDoc] = useState(true);
+  const [loadingProjectBudgets, setLoadingProjectBudgets] = useState(true);
   const [loadingPayments, setLoadingPayments] = useState(true);
   const [loadingIssueRequests, setLoadingIssueRequests] = useState(true);
   const [docError, setDocError] = useState<string | null>(null);
+  const [projectBudgetsError, setProjectBudgetsError] = useState<string | null>(
+    null,
+  );
   const [paymentsError, setPaymentsError] = useState<string | null>(null);
   const [issueRequestsError, setIssueRequestsError] = useState<string | null>(
     null,
@@ -104,9 +111,11 @@ export default function AdminFinanceDocDetailPage() {
   const loadAll = useCallback(
     async (cancelled: () => boolean) => {
       setLoadingDoc(true);
+      setLoadingProjectBudgets(true);
       setLoadingPayments(canLoadPayments);
       setLoadingIssueRequests(true);
       setDocError(null);
+      setProjectBudgetsError(null);
       setPaymentsError(null);
       setIssueRequestsError(null);
 
@@ -119,6 +128,17 @@ export default function AdminFinanceDocDetailPage() {
           setDoc(null);
         },
         () => setLoadingDoc(false),
+      );
+
+      await loadWithCancel(
+        cancelled,
+        () => fetchProjectBudgets(docId),
+        setProjectBudgets,
+        (message) => {
+          setProjectBudgetsError(message);
+          setProjectBudgets([]);
+        },
+        () => setLoadingProjectBudgets(false),
       );
 
       if (canLoadPayments) {
@@ -184,6 +204,9 @@ export default function AdminFinanceDocDetailPage() {
   return (
     <FinanceDocDetailDashboard
       doc={doc}
+      projectBudgets={projectBudgets}
+      loadingProjectBudgets={loadingProjectBudgets}
+      errorProjectBudgets={projectBudgetsError}
       payments={payments}
       issueRequests={issueRequests}
       issueRequestsTotal={issueRequestsTotal}

@@ -6,6 +6,7 @@ import type {
   TaskEnvelope,
   TaskGroupVO,
   TaskVO,
+  UserTaskProgressVO,
 } from "@/lib/admin/task-types";
 import { withClerkAuthorization } from "@/lib/auth/clerk-token";
 
@@ -61,6 +62,13 @@ export function taskDetailUrl(taskGroupId: number, taskId: number): string {
 
 export function taskPublishUrl(taskId: number): string {
   return buildTaskApiUrl(`/tasks/${taskId}`);
+}
+
+export function userTaskProgressUrl(
+  taskGroupId: number,
+  userId: number,
+): string {
+  return buildTaskApiUrl(`/tasks/task_group/${taskGroupId}/users/${userId}`);
 }
 
 export function dataMetricsUrl(): string {
@@ -137,6 +145,17 @@ export async function publishTask(taskId: number): Promise<PublishStatusVO> {
     method: "PATCH",
     body: JSON.stringify({ id: taskId, status: "PUBLISHED" }),
   });
+}
+
+export async function fetchUserTaskProgress(
+  taskGroupId: number,
+  userId: number,
+): Promise<UserTaskProgressVO[]> {
+  const data = await fetchTaskJsonEnvelope<UserTaskProgressVO[]>(
+    userTaskProgressUrl(taskGroupId, userId),
+    { method: "GET" },
+  );
+  return Array.isArray(data) ? data : [];
 }
 
 export async function fetchDataMetrics(): Promise<DataMetricVO[]> {

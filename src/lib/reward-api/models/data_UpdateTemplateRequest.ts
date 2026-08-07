@@ -3,5 +3,6 @@
 /* tslint:disable */
 export type data_UpdateTemplateRequest = {
     config: Record<string, any>;
+    title?: string;
 };
 

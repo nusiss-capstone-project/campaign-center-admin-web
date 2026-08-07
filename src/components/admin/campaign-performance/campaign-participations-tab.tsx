@@ -1,168 +1,340 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { ListPagination } from "@/components/admin/campaign-performance/list-pagination";
-import { ParticipationsDataTable } from "@/components/admin/campaign-performance/participations-data-table";
+import { IssueRecordsTable } from "@/components/admin/campaign-performance/issue-records-table";
+import { ParticipantsUsersTable } from "@/components/admin/campaign-performance/participants-users-table";
+import { UserTaskProgressTable } from "@/components/admin/campaign-performance/user-task-progress-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { fetchCampaignParticipations } from "@/lib/admin/campaign-performance-api";
-import type { CampaignParticipationRow } from "@/lib/admin/campaign-performance-row";
+  fetchCampaignParticipantMeta,
+  fetchCampaignParticipants,
+  type CampaignParticipantMeta,
+} from "@/lib/admin/campaign-performance-api";
 import { apiErrorMessage } from "@/lib/admin/campaign-performance-utils";
+import { fetchUserTaskProgress } from "@/lib/admin/task-admin-fetch";
+import type { UserTaskProgressVO } from "@/lib/admin/task-types";
+import { fetchIssueRecordsByProjectUser } from "@/lib/admin/reward/reward-api";
+import type { data_AdminParticipantVO } from "@/lib/api/models/data_AdminParticipant";
+import type { data_IssueRecordVO } from "@/lib/reward-api/models/data_IssueRecordVO";
 
-const PAGE_SIZE = 20;
-
-const REWARD_STATUS_OPTIONS = [
-  { value: "all", label: "All reward statuses" },
-  { value: "GRANTED", label: "Granted" },
-  { value: "PENDING", label: "Pending" },
-  { value: "FAILED", label: "Failed" },
-  { value: "SKIPPED", label: "Skipped" },
-] as const;
+type InnerTab = "participants" | "tasks" | "rewards";
 
 type CampaignParticipationsTabProps = {
   campaignId: number;
 };
 
+function parseUserId(raw: string): number | null {
+  const trim = raw.trim();
+  if (!trim) return null;
+  const n = Number(trim);
+  return Number.isFinite(n) ? n : null;
+}
+
 export function CampaignParticipationsTab({
   campaignId,
 }: Readonly<CampaignParticipationsTabProps>) {
-  const [userIdInput, setUserIdInput] = useState("");
-  const [rewardStatus, setRewardStatus] = useState("all");
-  const [appliedFilters, setAppliedFilters] = useState({
-    userId: "",
-    rewardStatus: "all",
+  const [innerTab, setInnerTab] = useState<InnerTab>("participants");
+
+  const [participants, setParticipants] = useState<data_AdminParticipantVO[]>(
+    [],
+  );
+  const [meta, setMeta] = useState<CampaignParticipantMeta>({
+    projectId: null,
+    taskGroupId: null,
   });
+  const [participantsLoading, setParticipantsLoading] = useState(true);
+  const [participantsError, setParticipantsError] = useState<string | null>(
+    null,
+  );
+  const [participantFilter, setParticipantFilter] = useState("");
 
-  const [page, setPage] = useState(1);
-  const [rows, setRows] = useState<CampaignParticipationRow[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [taskUserIdInput, setTaskUserIdInput] = useState("");
+  const [taskRows, setTaskRows] = useState<UserTaskProgressVO[]>([]);
+  const [taskLoading, setTaskLoading] = useState(false);
+  const [taskError, setTaskError] = useState<string | null>(null);
+  const [taskQueried, setTaskQueried] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    const userIdTrim = appliedFilters.userId.trim();
-    const userId =
-      userIdTrim !== "" && Number.isFinite(Number(userIdTrim))
-        ? Number(userIdTrim)
-        : undefined;
-    if (userIdTrim !== "" && userId == null) {
-      setError("User ID must be a valid number.");
-      setRows([]);
-      setTotal(0);
-      setLoading(false);
-      return;
-    }
+  const [rewardUserIdInput, setRewardUserIdInput] = useState("");
+  const [rewardRows, setRewardRows] = useState<data_IssueRecordVO[]>([]);
+  const [rewardLoading, setRewardLoading] = useState(false);
+  const [rewardError, setRewardError] = useState<string | null>(null);
+  const [rewardQueried, setRewardQueried] = useState(false);
 
+  const loadParticipants = useCallback(async () => {
+    setParticipantsLoading(true);
+    setParticipantsError(null);
     try {
-      const result = await fetchCampaignParticipations(campaignId, {
-        page,
-        pageSize: PAGE_SIZE,
-        userId,
-        rewardStatus:
-          appliedFilters.rewardStatus !== "all"
-            ? appliedFilters.rewardStatus
-            : undefined,
-      });
-      setRows(result.rows);
-      setTotal(result.total);
+      const result = await fetchCampaignParticipants(campaignId);
+      setParticipants(result.participants);
+      let nextMeta = result.meta;
+      if (nextMeta.projectId == null || nextMeta.taskGroupId == null) {
+        try {
+          const fallback = await fetchCampaignParticipantMeta(campaignId);
+          nextMeta = {
+            projectId: nextMeta.projectId ?? fallback.projectId,
+            taskGroupId: nextMeta.taskGroupId ?? fallback.taskGroupId,
+          };
+        } catch {
+          // Keep list meta; Tasks/Rewards will surface binding errors on load.
+        }
+      }
+      setMeta(nextMeta);
     } catch (e) {
-      setRows([]);
-      setTotal(0);
-      setError(apiErrorMessage(e));
+      setParticipants([]);
+      setParticipantsError(apiErrorMessage(e));
     } finally {
-      setLoading(false);
+      setParticipantsLoading(false);
     }
-  }, [appliedFilters, campaignId, page]);
+  }, [campaignId]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void loadParticipants();
+  }, [loadParticipants]);
 
-  function handleApplyFilters() {
-    setPage(1);
-    setAppliedFilters({
-      userId: userIdInput,
-      rewardStatus,
-    });
+  const filteredParticipants = useMemo(() => {
+    const q = participantFilter.trim();
+    if (!q) return participants;
+    return participants.filter((p) =>
+      String(p.user_id ?? "").includes(q),
+    );
+  }, [participantFilter, participants]);
+
+  async function ensureMeta(): Promise<CampaignParticipantMeta> {
+    if (meta.projectId != null && meta.taskGroupId != null) return meta;
+    const fallback = await fetchCampaignParticipantMeta(campaignId);
+    const merged = {
+      projectId: meta.projectId ?? fallback.projectId,
+      taskGroupId: meta.taskGroupId ?? fallback.taskGroupId,
+    };
+    setMeta(merged);
+    return merged;
   }
 
-  function renderRows() {
-    if (loading) {
-      return <p className="text-sm text-zinc-500">Loading participations…</p>;
+  async function handleLoadTasks() {
+    const userId = parseUserId(taskUserIdInput);
+    if (userId == null) {
+      setTaskError("Enter a valid User ID.");
+      setTaskRows([]);
+      setTaskQueried(false);
+      return;
     }
-    if (rows.length === 0) {
+    setTaskLoading(true);
+    setTaskError(null);
+    setTaskQueried(true);
+    try {
+      const current = await ensureMeta();
+      if (current.taskGroupId == null) {
+        setTaskRows([]);
+        setTaskError("Campaign is not bound to a task group.");
+        return;
+      }
+      const rows = await fetchUserTaskProgress(current.taskGroupId, userId);
+      setTaskRows(rows);
+    } catch (e) {
+      setTaskRows([]);
+      setTaskError(apiErrorMessage(e));
+    } finally {
+      setTaskLoading(false);
+    }
+  }
+
+  async function handleLoadRewards() {
+    const userId = parseUserId(rewardUserIdInput);
+    if (userId == null) {
+      setRewardError("Enter a valid User ID.");
+      setRewardRows([]);
+      setRewardQueried(false);
+      return;
+    }
+    setRewardLoading(true);
+    setRewardError(null);
+    setRewardQueried(true);
+    try {
+      const current = await ensureMeta();
+      if (current.projectId == null) {
+        setRewardRows([]);
+        setRewardError("Campaign is not bound to a reward project.");
+        return;
+      }
+      const rows = await fetchIssueRecordsByProjectUser(
+        current.projectId,
+        userId,
+      );
+      setRewardRows(rows);
+    } catch (e) {
+      setRewardRows([]);
+      setRewardError(apiErrorMessage(e));
+    } finally {
+      setRewardLoading(false);
+    }
+  }
+
+  function renderParticipantsBody() {
+    if (participantsLoading) {
+      return <p className="text-sm text-zinc-500">Loading participants…</p>;
+    }
+    if (filteredParticipants.length === 0) {
       return (
-        <p className="text-sm text-zinc-500">No participation records found.</p>
+        <p className="text-sm text-zinc-500">No participants found.</p>
       );
     }
-    return <ParticipationsDataTable rows={rows} />;
+    return <ParticipantsUsersTable rows={filteredParticipants} />;
+  }
+
+  function renderTasksBody() {
+    if (!taskQueried && !taskLoading) {
+      return (
+        <p className="text-sm text-zinc-500">
+          Enter a User ID and click Load to view task progress.
+        </p>
+      );
+    }
+    if (taskLoading) {
+      return <p className="text-sm text-zinc-500">Loading task progress…</p>;
+    }
+    if (taskRows.length === 0) {
+      return <p className="text-sm text-zinc-500">No task progress found.</p>;
+    }
+    return <UserTaskProgressTable rows={taskRows} />;
+  }
+
+  function renderRewardsBody() {
+    if (!rewardQueried && !rewardLoading) {
+      return (
+        <p className="text-sm text-zinc-500">
+          Enter a User ID and click Load to view issue records.
+        </p>
+      );
+    }
+    if (rewardLoading) {
+      return <p className="text-sm text-zinc-500">Loading issue records…</p>;
+    }
+    if (rewardRows.length === 0) {
+      return <p className="text-sm text-zinc-500">No issue records found.</p>;
+    }
+    return <IssueRecordsTable rows={rewardRows} />;
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-zinc-900/30 p-4">
-        <label className="grid gap-1.5 text-sm">
-          <span className="text-xs text-zinc-500">User ID</span>
-          <Input
-            inputMode="numeric"
-            placeholder="e.g. 10001"
-            value={userIdInput}
-            onChange={(e) => setUserIdInput(e.target.value)}
-            className="h-9 w-36 border-white/10 bg-zinc-900/80"
-          />
-        </label>
-        <label className="grid gap-1.5 text-sm">
-          <span className="text-xs text-zinc-500">Reward status</span>
-          <Select value={rewardStatus} onValueChange={setRewardStatus}>
-            <SelectTrigger className="h-9 w-44 border-white/10 bg-zinc-900/80">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {REWARD_STATUS_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </label>
-        <Button
-          type="button"
-          className="border-0 bg-white text-black hover:bg-zinc-200"
-          onClick={handleApplyFilters}
+    <Tabs
+      value={innerTab}
+      onValueChange={(v) => setInnerTab(v as InnerTab)}
+      className="gap-6"
+    >
+      <TabsList
+        variant="default"
+        className="h-auto gap-2 bg-transparent p-0 text-zinc-500"
+      >
+        <TabsTrigger
+          value="participants"
+          className="rounded-lg px-4 py-2 text-sm font-medium text-zinc-400 data-active:bg-zinc-800 data-active:text-white data-active:shadow-none"
         >
-          Apply filters
-        </Button>
-      </div>
-
-      {error ? (
-        <p
-          className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
-          role="alert"
+          Participants
+        </TabsTrigger>
+        <TabsTrigger
+          value="tasks"
+          className="rounded-lg px-4 py-2 text-sm font-medium text-zinc-400 data-active:bg-zinc-800 data-active:text-white data-active:shadow-none"
         >
-          {error}
-        </p>
-      ) : null}
+          Tasks
+        </TabsTrigger>
+        <TabsTrigger
+          value="rewards"
+          className="rounded-lg px-4 py-2 text-sm font-medium text-zinc-400 data-active:bg-zinc-800 data-active:text-white data-active:shadow-none"
+        >
+          Rewards
+        </TabsTrigger>
+      </TabsList>
 
-      {renderRows()}
+      <TabsContent value="participants" className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-zinc-900/30 p-4">
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-xs text-zinc-500">User ID filter</span>
+            <Input
+              inputMode="numeric"
+              placeholder="Filter by user ID"
+              value={participantFilter}
+              onChange={(e) => setParticipantFilter(e.target.value)}
+              className="h-9 w-44 border-white/10 bg-zinc-900/80"
+            />
+          </label>
+        </div>
+        {participantsError ? (
+          <p
+            className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+            role="alert"
+          >
+            {participantsError}
+          </p>
+        ) : null}
+        {renderParticipantsBody()}
+      </TabsContent>
 
-      <ListPagination
-        page={page}
-        pageSize={PAGE_SIZE}
-        total={total}
-        onPageChange={setPage}
-        disabled={loading}
-      />
-    </div>
+      <TabsContent value="tasks" className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-zinc-900/30 p-4">
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-xs text-zinc-500">User ID</span>
+            <Input
+              inputMode="numeric"
+              placeholder="e.g. 10001"
+              value={taskUserIdInput}
+              onChange={(e) => setTaskUserIdInput(e.target.value)}
+              className="h-9 w-44 border-white/10 bg-zinc-900/80"
+            />
+          </label>
+          <Button
+            type="button"
+            className="border-0 bg-white text-black hover:bg-zinc-200"
+            onClick={() => void handleLoadTasks()}
+            disabled={taskLoading}
+          >
+            Load
+          </Button>
+        </div>
+        {taskError ? (
+          <p
+            className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+            role="alert"
+          >
+            {taskError}
+          </p>
+        ) : null}
+        {renderTasksBody()}
+      </TabsContent>
+
+      <TabsContent value="rewards" className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-white/10 bg-zinc-900/30 p-4">
+          <label className="grid gap-1.5 text-sm">
+            <span className="text-xs text-zinc-500">User ID</span>
+            <Input
+              inputMode="numeric"
+              placeholder="e.g. 10001"
+              value={rewardUserIdInput}
+              onChange={(e) => setRewardUserIdInput(e.target.value)}
+              className="h-9 w-44 border-white/10 bg-zinc-900/80"
+            />
+          </label>
+          <Button
+            type="button"
+            className="border-0 bg-white text-black hover:bg-zinc-200"
+            onClick={() => void handleLoadRewards()}
+            disabled={rewardLoading}
+          >
+            Load
+          </Button>
+        </div>
+        {rewardError ? (
+          <p
+            className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+            role="alert"
+          >
+            {rewardError}
+          </p>
+        ) : null}
+        {renderRewardsBody()}
+      </TabsContent>
+    </Tabs>
   );
 }

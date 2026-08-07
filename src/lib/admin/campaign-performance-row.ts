@@ -22,17 +22,6 @@ export type CampaignPerformanceDailyRow = {
   currency: string;
 };
 
-export type CampaignParticipationRow = {
-  participationId: string;
-  campaignId: number;
-  userId: string;
-  joinAt: string;
-  rewardAmount: number | null;
-  rewardStatus: string;
-  currency: string;
-  failureReason: string;
-};
-
 function asRecord(v: unknown): Record<string, unknown> | null {
   if (v && typeof v === "object" && !Array.isArray(v)) {
     return v as Record<string, unknown>;
@@ -132,39 +121,6 @@ export function normalizePerformanceDailyRows(
       };
     })
     .filter((r): r is CampaignPerformanceDailyRow => r != null);
-}
-
-export function normalizeParticipationRows(
-  items: unknown[],
-): CampaignParticipationRow[] {
-  return items
-    .map((item) => {
-      const o = asRecord(item);
-      if (!o) return null;
-      const participationId = pickStr(o, [
-        "participationId",
-        "participation_id",
-        "id",
-      ]);
-      const userId = pickStr(o, ["userId", "user_id"]);
-      if (!participationId || !userId) return null;
-      const campaignId =
-        pickNum(o, ["campaignId", "campaign_id"]) ?? 0;
-      const rewardAmount = pickNum(o, ["rewardAmount", "reward_amount"]);
-      return {
-        participationId,
-        campaignId,
-        userId,
-        joinAt: pickStr(o, ["joinAt", "join_at"]),
-        rewardAmount,
-        rewardStatus:
-          pickStr(o, ["rewardStatus", "reward_status"]) ||
-          pickStr(o, ["status"]),
-        currency: pickStr(o, ["currency"]) || "USD",
-        failureReason: pickStr(o, ["failureReason", "failure_reason"]),
-      };
-    })
-    .filter((r): r is CampaignParticipationRow => r != null);
 }
 
 export function formatSummaryRewardAmount(summary: CampaignPerformanceSummary): string {

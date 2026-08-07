@@ -71,9 +71,10 @@ export function defaultPerformanceDateRange(): {
   return { startDate: formatYmd(start), endDate: formatYmd(end) };
 }
 
-export function formatJoinAt(raw: string): string {
-  if (!raw) return "—";
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime())) return raw;
+export function formatEpoch(raw: number | null | undefined): string {
+  if (raw == null || !Number.isFinite(raw)) return "—";
+  const ms = raw > 1e12 ? raw : raw * 1000;
+  const d = new Date(ms);
+  if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleString();
 }

@@ -202,7 +202,7 @@ function TaskRewardItemsPanel({
                 <SelectItem value={NONE}>None</SelectItem>
                 {templates.map((t) => (
                   <SelectItem key={t.id} value={String(t.id)}>
-                    #{t.id} · {t.typeLabel} · {t.voucherType || t.unit}
+                    #{t.id} · {t.title !== "—" ? t.title : "Untitled"}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -327,8 +327,7 @@ function CampaignTaskRewardsSection({
                 <SelectItem value={NONE}>None</SelectItem>
                 {templates.map((t) => (
                   <SelectItem key={t.id} value={String(t.id)}>
-                    #{t.id} · {t.typeLabel} · {t.voucherType || t.unit} ·{" "}
-                    {t.status}
+                    #{t.id} · {t.title !== "—" ? t.title : "Untitled"}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -478,7 +477,9 @@ export function CampaignDetailsForm({
               ...row,
               rewardTemplateId: templateId === NONE ? "" : templateId,
               rewardTemplateName: template
-                ? `${template.typeLabel} · ${template.voucherType || template.unit}`
+                ? template.title !== "—"
+                  ? template.title
+                  : `Template #${template.id}`
                 : "",
             }
           : row,

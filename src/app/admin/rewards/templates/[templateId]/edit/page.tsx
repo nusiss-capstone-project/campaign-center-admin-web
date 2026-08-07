@@ -75,7 +75,7 @@ export default function AdminEditTemplatePage() {
     setError(null);
     setSubmitting(true);
     try {
-      const payload = toUpdateTemplatePayload(values.type, values.config);
+      const payload = toUpdateTemplatePayload(values);
       await updateTemplate(templateId, payload);
       router.push(`/admin/rewards/templates/${templateId}`);
     } catch (err) {
@@ -143,7 +143,7 @@ export default function AdminEditTemplatePage() {
       </Link>
       <Card className="border-white/10 bg-zinc-900/40">
         <CardHeader>
-          <CardTitle>Edit template config</CardTitle>
+          <CardTitle>Edit template</CardTitle>
         </CardHeader>
         <form onSubmit={onSubmit}>
           <CardContent className="flex flex-col gap-4">
@@ -175,7 +175,7 @@ export default function AdminEditTemplatePage() {
               disabled={submitting}
               className="bg-white text-black hover:bg-zinc-200"
             >
-              {submitting ? "Saving…" : "Save config"}
+              {submitting ? "Saving…" : "Save"}
             </Button>
           </CardFooter>
         </form>

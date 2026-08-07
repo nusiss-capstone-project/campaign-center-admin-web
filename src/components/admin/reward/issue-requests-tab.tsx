@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import type { IssueRequestDisplayRow } from "@/lib/admin/reward/reward-row";
 import {
   canApproveIssueRequestStatus,
@@ -8,6 +10,7 @@ import {
   isIssueRequestReadonly,
   useRewardCapabilities,
 } from "@/lib/admin/reward/reward-capabilities";
+import { IssueRequestDetailDialog } from "@/components/admin/reward/issue-request-detail-dialog";
 import { IssueRequestStatusBadge } from "@/components/admin/reward/issue-request-status-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +46,9 @@ export function IssueRequestsTab({
   onReject,
 }: Readonly<IssueRequestsTabProps>) {
   const caps = useRewardCapabilities();
+  const [detailRow, setDetailRow] = useState<IssueRequestDisplayRow | null>(
+    null,
+  );
 
   if (loading) {
     return <p className="text-sm text-zinc-500">Loading issue requests…</p>;
@@ -136,53 +142,65 @@ export function IssueRequestsTab({
                     <IssueRequestStatusBadge status={row.requestStatus} />
                   </TableCell>
                   <TableCell className="border-0 px-4 py-4">
-                    {readonly ? (
-                      <span className="text-xs text-zinc-500">Readonly</span>
-                    ) : (
-                      <div className="flex justify-end gap-1">
-                        {canEdit ? (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onEdit(row)}
-                          >
-                            Edit
-                          </Button>
-                        ) : null}
-                        {canSubmit ? (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onSubmit(row)}
-                          >
-                            Submit
-                          </Button>
-                        ) : null}
-                        {canApprove ? (
-                          <>
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDetailRow(row)}
+                      >
+                        View
+                      </Button>
+                      {readonly ? (
+                        <span className="self-center text-xs text-zinc-500">
+                          Readonly
+                        </span>
+                      ) : (
+                        <>
+                          {canEdit ? (
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
-                              onClick={() => onApprove(row)}
+                              onClick={() => onEdit(row)}
                             >
-                              Approve
+                              Edit
                             </Button>
+                          ) : null}
+                          {canSubmit ? (
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
-                              className="text-red-300 hover:text-red-200"
-                              onClick={() => onReject(row)}
+                              onClick={() => onSubmit(row)}
                             >
-                              Reject
+                              Submit
                             </Button>
-                          </>
-                        ) : null}
-                      </div>
-                    )}
+                          ) : null}
+                          {canApprove ? (
+                            <>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onApprove(row)}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-300 hover:text-red-200"
+                                onClick={() => onReject(row)}
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -193,6 +211,12 @@ export function IssueRequestsTab({
       <p className="text-xs text-zinc-500">
         Showing {rows.length} of {total} issue requests
       </p>
+
+      <IssueRequestDetailDialog
+        open={detailRow != null}
+        row={detailRow}
+        onClose={() => setDetailRow(null)}
+      />
     </div>
   );
 }

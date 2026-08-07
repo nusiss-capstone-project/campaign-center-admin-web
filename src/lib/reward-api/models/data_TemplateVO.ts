@@ -6,6 +6,7 @@ export type data_TemplateVO = {
     created_at?: string;
     id?: number;
     status?: data_TemplateVO.status;
+    title?: string;
     type?: data_TemplateVO.type;
     unit?: string;
     updated_at?: string;
