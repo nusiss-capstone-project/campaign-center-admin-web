@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { useAdminCapabilities } from "@/components/admin/admin-access-provider";
 import { ConfirmActionDialog } from "@/components/admin/confirm-action-dialog";
@@ -33,6 +33,157 @@ import { USER_GROUP_FIELD_BY_KEY } from "@/lib/admin/user-group-fields";
 import { userGroupStatusLabel } from "@/lib/admin/user-group-row";
 import type { data_UserGroupCountVO } from "@/lib/usergroup-api/models/data_UserGroupCountVO";
 import type { data_UserGroupVO } from "@/lib/usergroup-api/models/data_UserGroupVO";
+
+function UserGroupDetailActions({
+  userGroupId,
+  isDraft,
+  isActive,
+  canEdit,
+  canPublish,
+  canOffline,
+  onPublishClick,
+  onOfflineClick,
+}: Readonly<{
+  userGroupId: number;
+  isDraft: boolean;
+  isActive: boolean;
+  canEdit: boolean;
+  canPublish: boolean;
+  canOffline: boolean;
+  onPublishClick: () => void;
+  onOfflineClick: () => void;
+}>) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {isDraft && canEdit ? (
+        <Button
+          asChild
+          className="border-0 bg-white text-black hover:bg-zinc-200"
+        >
+          <Link href={`/admin/user-groups/${userGroupId}/edit`}>Edit</Link>
+        </Button>
+      ) : null}
+      {isDraft && canPublish ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="border-white/10 bg-zinc-900/50"
+          onClick={onPublishClick}
+        >
+          Publish
+        </Button>
+      ) : null}
+      {isActive && canOffline ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="border-amber-500/30 bg-amber-500/10 text-amber-100"
+          onClick={onOfflineClick}
+        >
+          Offline
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+function EstimatedSizePanel({
+  count,
+  counting,
+  onEstimate,
+}: Readonly<{
+  count: data_UserGroupCountVO | null;
+  counting: boolean;
+  onEstimate: () => void;
+}>) {
+  let estimateLabel = "Not estimated yet.";
+  if (count) {
+    const computed =
+      count.computedAt != null
+        ? new Date(count.computedAt).toLocaleString()
+        : "—";
+    estimateLabel = `${count.count ?? 0} users · computed ${computed}`;
+  }
+
+  return (
+    <div className="rounded-lg border border-white/10 bg-zinc-950/40 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-zinc-200">Estimated size</p>
+          <p className="mt-1 text-sm text-zinc-500">{estimateLabel}</p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="border-white/10 bg-zinc-900/50"
+          disabled={counting}
+          onClick={onEstimate}
+        >
+          {counting ? "Estimating…" : "Estimate size"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function UserGroupDetailBody({
+  group,
+  count,
+  counting,
+  onEstimate,
+}: Readonly<{
+  group: data_UserGroupVO;
+  count: data_UserGroupCountVO | null;
+  counting: boolean;
+  onEstimate: () => void;
+}>) {
+  const formValues = parseUserGroupToFormValues(group);
+  const conditions = group.ruleConfig?.conditions ?? [];
+
+  return (
+    <>
+      <UserGroupRuleForm values={formValues} readOnly />
+      <EstimatedSizePanel
+        count={count}
+        counting={counting}
+        onEstimate={onEstimate}
+      />
+      <div className="text-xs text-zinc-500">
+        <p className="mb-1 font-medium text-zinc-400">Rule summary</p>
+        <ul className="list-inside list-disc space-y-1">
+          <li>Logic: {group.ruleConfig?.logic ?? "—"}</li>
+          {conditions.map((c) => (
+            <li key={`${c.field}-${c.operator}-${String(c.value)}`}>
+              {USER_GROUP_FIELD_BY_KEY[c.field]?.label ?? c.field} {c.operator}{" "}
+              {formatConditionValueForDisplay(c.field, c.value)}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
+  );
+}
+
+function renderDetailContent(args: {
+  loading: boolean;
+  group: data_UserGroupVO | null;
+  count: data_UserGroupCountVO | null;
+  counting: boolean;
+  onEstimate: () => void;
+}): ReactNode {
+  if (args.loading) {
+    return <p className="text-sm text-zinc-500">Loading…</p>;
+  }
+  if (!args.group) return null;
+  return (
+    <UserGroupDetailBody
+      group={args.group}
+      count={args.count}
+      counting={args.counting}
+      onEstimate={args.onEstimate}
+    />
+  );
+}
 
 export default function AdminUserGroupDetailPage() {
   const params = useParams();
@@ -85,7 +236,6 @@ export default function AdminUserGroupDetailPage() {
   const status = group?.status ?? "";
   const isDraft = status === "DRAFT";
   const isActive = status === "ACTIVE";
-  const formValues = parseUserGroupToFormValues(group);
 
   async function onEstimate() {
     if (!isValidRouteId(userGroupId)) return;
@@ -161,42 +311,22 @@ export default function AdminUserGroupDetailPage() {
         >
           <Link href="/admin/user-groups">← User groups</Link>
         </Button>
-        <div className="flex flex-wrap gap-2">
-          {isDraft && caps.canEditUserGroup ? (
-            <Button
-              asChild
-              className="border-0 bg-white text-black hover:bg-zinc-200"
-            >
-              <Link href={`/admin/user-groups/${userGroupId}/edit`}>Edit</Link>
-            </Button>
-          ) : null}
-          {isDraft && caps.canPublishUserGroup ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="border-white/10 bg-zinc-900/50"
-              onClick={() => {
-                setActionError(null);
-                setPublishOpen(true);
-              }}
-            >
-              Publish
-            </Button>
-          ) : null}
-          {isActive && caps.canOfflineUserGroup ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="border-amber-500/30 bg-amber-500/10 text-amber-100"
-              onClick={() => {
-                setActionError(null);
-                setOfflineOpen(true);
-              }}
-            >
-              Offline
-            </Button>
-          ) : null}
-        </div>
+        <UserGroupDetailActions
+          userGroupId={userGroupId}
+          isDraft={isDraft}
+          isActive={isActive}
+          canEdit={caps.canEditUserGroup}
+          canPublish={caps.canPublishUserGroup}
+          canOffline={caps.canOfflineUserGroup}
+          onPublishClick={() => {
+            setActionError(null);
+            setPublishOpen(true);
+          }}
+          onOfflineClick={() => {
+            setActionError(null);
+            setOfflineOpen(true);
+          }}
+        />
       </div>
 
       <Card className="border-white/10 bg-zinc-900/40 text-zinc-100 ring-white/10">
@@ -228,57 +358,15 @@ export default function AdminUserGroupDetailPage() {
             </p>
           ) : null}
           {notice ? (
-            <p className="text-sm text-emerald-300" role="status">
-              {notice}
-            </p>
+            <output className="block text-sm text-emerald-300">{notice}</output>
           ) : null}
-          {loading ? (
-            <p className="text-sm text-zinc-500">Loading…</p>
-          ) : group ? (
-            <>
-              <UserGroupRuleForm values={formValues} readOnly />
-              <div className="rounded-lg border border-white/10 bg-zinc-950/40 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-medium text-zinc-200">
-                      Estimated size
-                    </p>
-                    <p className="mt-1 text-sm text-zinc-500">
-                      {count
-                        ? `${count.count ?? 0} users · computed ${
-                            count.computedAt
-                              ? new Date(count.computedAt).toLocaleString()
-                              : "—"
-                          }`
-                        : "Not estimated yet."}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-white/10 bg-zinc-900/50"
-                    disabled={counting}
-                    onClick={() => void onEstimate()}
-                  >
-                    {counting ? "Estimating…" : "Estimate size"}
-                  </Button>
-                </div>
-              </div>
-              <div className="text-xs text-zinc-500">
-                <p className="mb-1 font-medium text-zinc-400">Rule summary</p>
-                <ul className="list-inside list-disc space-y-1">
-                  <li>Logic: {group.ruleConfig?.logic ?? "—"}</li>
-                  {(group.ruleConfig?.conditions ?? []).map((c, i) => (
-                    <li key={`sum-${i}`}>
-                      {USER_GROUP_FIELD_BY_KEY[c.field]?.label ?? c.field}{" "}
-                      {c.operator}{" "}
-                      {formatConditionValueForDisplay(c.field, c.value)}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </>
-          ) : null}
+          {renderDetailContent({
+            loading,
+            group,
+            count,
+            counting,
+            onEstimate: () => void onEstimate(),
+          })}
         </CardContent>
         <CardFooter className="border-t border-white/10 bg-transparent">
           <Button

@@ -15,6 +15,8 @@ import {
 export type UserGroupLogic = "AND" | "OR";
 
 export type UserGroupConditionFormValue = {
+  /** Stable client key for React lists (not sent to API). */
+  key: string;
   field: string;
   operator: UserGroupOperator;
   /** UI string; converted to typed value on submit. */
@@ -27,8 +29,25 @@ export type UserGroupFormValues = {
   conditions: UserGroupConditionFormValue[];
 };
 
+function newConditionKey(): string {
+  const c = globalThis.crypto;
+  if (c && typeof c.randomUUID === "function") {
+    return c.randomUUID();
+  }
+  if (c && typeof c.getRandomValues === "function") {
+    const bytes = new Uint8Array(16);
+    c.getRandomValues(bytes);
+    bytes[6] = (bytes[6]! & 0x0f) | 0x40;
+    bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+    const hex = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  }
+  throw new Error("Secure random UUID is unavailable in this environment.");
+}
+
 export function emptyCondition(): UserGroupConditionFormValue {
   return {
+    key: newConditionKey(),
     field: "market",
     operator: "EQ",
     value: "",
@@ -43,10 +62,30 @@ export function emptyUserGroupFormValues(): UserGroupFormValues {
   };
 }
 
+function unknownToDisplayString(value: unknown): string {
+  if (value == null) return "";
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return String(value);
+  }
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "";
+    }
+  }
+  return "";
+}
+
 function valueToFormString(field: string, value: unknown): string {
   const meta = USER_GROUP_FIELD_BY_KEY[field];
   if (!meta) {
-    return value == null ? "" : String(value);
+    return unknownToDisplayString(value);
   }
   if (meta.valueKind === "datetime") {
     return timestampToDatetimeLocal(value);
@@ -57,7 +96,7 @@ function valueToFormString(field: string, value: unknown): string {
     return "";
   }
   if (value == null) return "";
-  return String(value);
+  return unknownToDisplayString(value);
 }
 
 function parseCondition(raw: unknown): UserGroupConditionFormValue {
@@ -72,6 +111,7 @@ function parseCondition(raw: unknown): UserGroupConditionFormValue {
     ? (opRaw as UserGroupOperator)
     : "EQ";
   return {
+    key: newConditionKey(),
     field,
     operator,
     value: valueToFormString(field, o.value),
@@ -115,7 +155,7 @@ function conditionValueForApi(
     case "number": {
       const n = Number(trimmed);
       if (!Number.isFinite(n)) {
-        throw new Error(`${meta.label} must be a number.`);
+        throw new TypeError(`${meta.label} must be a number.`);
       }
       return n;
     }
@@ -168,15 +208,21 @@ export function formatConditionValueForDisplay(
   value: unknown,
 ): string {
   const meta = USER_GROUP_FIELD_BY_KEY[field];
-  if (!meta) return value == null ? "—" : String(value);
+  if (!meta) {
+    const text = unknownToDisplayString(value);
+    return text || "—";
+  }
   if (meta.valueKind === "datetime") {
     const local = timestampToDatetimeLocal(value);
-    return local || (value == null ? "—" : String(value));
+    if (local) return local;
+    const text = unknownToDisplayString(value);
+    return text || "—";
   }
   if (meta.valueKind === "boolean") {
     if (value === true || value === "true") return "true";
     if (value === false || value === "false") return "false";
     return "—";
   }
-  return value == null || value === "" ? "—" : String(value);
+  if (value == null || value === "") return "—";
+  return unknownToDisplayString(value) || "—";
 }

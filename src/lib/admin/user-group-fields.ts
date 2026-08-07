@@ -1,5 +1,3 @@
-import { SHARED_MARKETS } from "@/lib/shared/markets";
-
 export const USER_GROUP_OPERATORS = [
   "EQ",
   "NEQ",
@@ -53,7 +51,7 @@ export const USER_GROUP_FIELD_BY_KEY = Object.fromEntries(
 
 export const KYC_STATUS_OPTIONS = ["PENDING", "PASSED"] as const;
 
-export const MARKET_OPTIONS = SHARED_MARKETS;
+export { SHARED_MARKETS as MARKET_OPTIONS } from "@/lib/shared/markets";
 
 export const USER_GROUP_STATUSES = ["DRAFT", "ACTIVE", "OFFLINE"] as const;
 

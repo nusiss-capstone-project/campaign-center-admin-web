@@ -1,13 +1,10 @@
 import type { data_UserGroupListItemVO } from "@/lib/usergroup-api/models/data_UserGroupListItemVO";
-import {
-  isUserGroupStatus,
-  type UserGroupStatus,
-} from "@/lib/admin/user-group-fields";
+import { isUserGroupStatus } from "@/lib/admin/user-group-fields";
 
 export type UserGroupDisplayRow = {
   id: number;
   name: string;
-  status: UserGroupStatus | string;
+  status: string;
 };
 
 export function normalizeUserGroupRows(

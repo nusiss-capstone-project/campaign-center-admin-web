@@ -222,7 +222,7 @@ export function UserGroupRuleForm({
 
         {values.conditions.map((condition, index) => (
           <div
-            key={`condition-${index}`}
+            key={condition.key}
             className="rounded-lg border border-white/10 bg-zinc-950/40 p-3"
           >
             <div className="mb-2 flex items-center justify-between gap-2">

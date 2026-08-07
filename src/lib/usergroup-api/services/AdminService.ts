@@ -1,7 +1,6 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
 import type { data_BaseResponse } from '../models/data_BaseResponse';
 import type { data_CreateUserGroupRequest } from '../models/data_CreateUserGroupRequest';
 import type { data_UpdateUserGroupRequest } from '../models/data_UpdateUserGroupRequest';

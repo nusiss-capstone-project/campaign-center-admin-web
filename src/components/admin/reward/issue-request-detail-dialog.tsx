@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { BudgetAvailableTotalList } from "@/components/admin/reward/budget-available-total";
+import { BudgetLoadState } from "@/components/admin/reward/budget-available-total";
 import { IssueRequestStatusBadge } from "@/components/admin/reward/issue-request-status-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -115,15 +115,11 @@ export function IssueRequestDetailDialog({
                 Issue budget
               </h3>
               <div className="mt-3">
-                {loading ? (
-                  <p className="text-sm text-zinc-500">Loading budgets…</p>
-                ) : error ? (
-                  <p className="text-sm text-red-300" role="alert">
-                    {error}
-                  </p>
-                ) : (
-                  <BudgetAvailableTotalList budgets={budgets} />
-                )}
+                <BudgetLoadState
+                  loading={loading}
+                  error={error}
+                  budgets={budgets}
+                />
               </div>
             </div>
           </div>

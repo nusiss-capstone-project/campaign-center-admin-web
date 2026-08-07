@@ -20,7 +20,7 @@ import type {
   IssueRequestDisplayRow,
 } from "@/lib/admin/reward/reward-row";
 import { rewardApiErrorMessage } from "@/lib/admin/reward/reward-utils";
-import { BudgetAvailableTotalList } from "@/components/admin/reward/budget-available-total";
+import { BudgetLoadState } from "@/components/admin/reward/budget-available-total";
 import { FinanceDocForm } from "@/components/admin/reward/finance-doc-form";
 import {
   FinanceDocDetailDialogs,
@@ -163,18 +163,12 @@ export function FinanceDocDetailDashboard({
                     Project budget
                   </h2>
                   <div className="mt-4">
-                    {loadingProjectBudgets ? (
-                      <p className="text-sm text-zinc-500">Loading budgets…</p>
-                    ) : errorProjectBudgets ? (
-                      <p className="text-sm text-red-300" role="alert">
-                        {errorProjectBudgets}
-                      </p>
-                    ) : (
-                      <BudgetAvailableTotalList
-                        budgets={projectBudgets}
-                        showUnit
-                      />
-                    )}
+                    <BudgetLoadState
+                      loading={loadingProjectBudgets}
+                      error={errorProjectBudgets}
+                      budgets={projectBudgets}
+                      showUnit
+                    />
                   </div>
                 </div>
               </div>

@@ -149,6 +149,20 @@ function useCampaignImportLists(readOnly: boolean) {
   };
 }
 
+function templateSelectLabel(template: TemplateDisplayRow): string {
+  const title = template.title.trim();
+  if (title && title !== "—") {
+    return `#${template.id} · ${title}`;
+  }
+  return `#${template.id} · Untitled`;
+}
+
+function templateStoredName(template: TemplateDisplayRow): string {
+  const title = template.title.trim();
+  if (title && title !== "—") return title;
+  return `Template #${template.id}`;
+}
+
 function taskRewardLabel(item: CampaignFormValues["taskRewardItems"][number]) {
   if (item.rewardTemplateName) return item.rewardTemplateName;
   if (item.rewardTemplateId) return `#${item.rewardTemplateId}`;
@@ -202,7 +216,7 @@ function TaskRewardItemsPanel({
                 <SelectItem value={NONE}>None</SelectItem>
                 {templates.map((t) => (
                   <SelectItem key={t.id} value={String(t.id)}>
-                    #{t.id} · {t.title !== "—" ? t.title : "Untitled"}
+                    {templateSelectLabel(t)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -234,6 +248,48 @@ type CampaignTaskRewardsSectionProps = {
   onSelectTaskTemplate: (taskId: string, templateId: string) => void;
 };
 
+function ReadOnlyTaskRewards({
+  values,
+}: Readonly<{ values: CampaignFormValues }>) {
+  if (values.taskRewardItems.length === 0) {
+    return (
+      <div className="flex flex-col gap-2 text-sm text-zinc-300">
+        <p>
+          Task group: {values.taskGroupId ? `#${values.taskGroupId}` : "—"}
+        </p>
+        <p>
+          Group reward template:{" "}
+          {values.taskGroupRewardTemplateId
+            ? `#${values.taskGroupRewardTemplateId}`
+            : "—"}
+        </p>
+        <p className="text-zinc-500">No task reward items.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2 text-sm text-zinc-300">
+      <p>
+        Task group: {values.taskGroupId ? `#${values.taskGroupId}` : "—"}
+      </p>
+      <p>
+        Group reward template:{" "}
+        {values.taskGroupRewardTemplateId
+          ? `#${values.taskGroupRewardTemplateId}`
+          : "—"}
+      </p>
+      <ul className="list-inside list-disc space-y-1 text-zinc-400">
+        {values.taskRewardItems.map((item) => (
+          <li key={item.taskId || item.taskName}>
+            {item.taskName || `Task ${item.taskId}`} → {taskRewardLabel(item)}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function CampaignTaskRewardsSection({
   values,
   readOnly,
@@ -258,29 +314,7 @@ function CampaignTaskRewardsSection({
         </p>
       ) : null}
       {readOnly ? (
-        <div className="flex flex-col gap-2 text-sm text-zinc-300">
-          <p>
-            Task group: {values.taskGroupId ? `#${values.taskGroupId}` : "—"}
-          </p>
-          <p>
-            Group reward template:{" "}
-            {values.taskGroupRewardTemplateId
-              ? `#${values.taskGroupRewardTemplateId}`
-              : "—"}
-          </p>
-          {values.taskRewardItems.length === 0 ? (
-            <p className="text-zinc-500">No task reward items.</p>
-          ) : (
-            <ul className="list-inside list-disc space-y-1 text-zinc-400">
-              {values.taskRewardItems.map((item) => (
-                <li key={item.taskId || item.taskName}>
-                  {item.taskName || `Task ${item.taskId}`} →{" "}
-                  {taskRewardLabel(item)}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <ReadOnlyTaskRewards values={values} />
       ) : (
         <>
           <label className="grid gap-1.5 text-sm">
@@ -327,7 +361,7 @@ function CampaignTaskRewardsSection({
                 <SelectItem value={NONE}>None</SelectItem>
                 {templates.map((t) => (
                   <SelectItem key={t.id} value={String(t.id)}>
-                    #{t.id} · {t.title !== "—" ? t.title : "Untitled"}
+                    {templateSelectLabel(t)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -375,264 +409,208 @@ function patch(
   return { ...prev, ...next };
 }
 
-export function CampaignDetailsForm({
-  values,
-  readOnly,
-  onChange,
+function mergeTasksWithExistingRewards(
+  tasks: TaskVO[],
+  existingItems: CampaignFormValues["taskRewardItems"],
+): CampaignFormValues["taskRewardItems"] {
+  return tasks.map((task) => {
+    const existing = existingItems.find(
+      (row) => row.taskId === String(task.id ?? ""),
+    );
+    return {
+      taskId: task.id != null ? String(task.id) : "",
+      taskName: task.name ?? "",
+      rewardTemplateId: existing?.rewardTemplateId ?? "",
+      rewardTemplateName: existing?.rewardTemplateName ?? "",
+    };
+  });
+}
+
+function CampaignStatusBanner({
   statusLabel,
   versionLabel,
-}: Readonly<CampaignDetailsFormProps>) {
-  const ro = readOnly;
-  const set = (p: Partial<CampaignFormValues>) => {
-    if (!readOnly && onChange) onChange(patch(values, p));
-  };
-
-  const {
-    projects,
-    templates,
-    taskGroups,
-    landingPages,
-    userGroups,
-    importError,
-    setImportError,
-    loadingImports,
-  } = useCampaignImportLists(ro);
-  const [loadingTasks, setLoadingTasks] = useState(false);
-
-  async function onSelectTaskGroup(taskGroupId: string) {
-    if (ro) return;
-    if (!taskGroupId || taskGroupId === NONE) {
-      set({
-        taskGroupId: "",
-        taskGroupRewardTemplateId: "",
-        taskRewardItems: [],
-      });
-      return;
-    }
-    set({ taskGroupId });
-    setLoadingTasks(true);
-    setImportError(null);
-    try {
-      const tasks = await fetchTasksByGroup(Number(taskGroupId));
-      const items = tasks.map((task: TaskVO) => {
-        const existing = values.taskRewardItems.find(
-          (row) => row.taskId === String(task.id ?? ""),
-        );
-        return {
-          taskId: task.id != null ? String(task.id) : "",
-          taskName: task.name ?? "",
-          rewardTemplateId: existing?.rewardTemplateId ?? "",
-          rewardTemplateName: existing?.rewardTemplateName ?? "",
-        };
-      });
-      set({ taskGroupId, taskRewardItems: items });
-    } catch (e) {
-      setImportError(
-        e instanceof Error ? e.message : "Failed to load tasks for group",
-      );
-    } finally {
-      setLoadingTasks(false);
-    }
-  }
-
-  function onSelectBudget(projectId: string) {
-    if (projectId === NONE) {
-      set({ budgetProjectId: "", budgetProjectName: "" });
-      return;
-    }
-    const project = projects.find((p) => String(p.id) === projectId);
-    set({
-      budgetProjectId: projectId,
-      budgetProjectName: project?.name ?? values.budgetProjectName,
-    });
-  }
-
-  function onSelectLandingPage(landingPageId: string) {
-    set({
-      landingPageId: landingPageId === NONE ? "" : landingPageId,
-    });
-  }
-
-  function onSelectUserGroup(groupId: string) {
-    if (groupId === NONE) {
-      set({ targetUserGroupId: "", targetUserGroupName: "" });
-      return;
-    }
-    const selected = userGroups.find((g) => String(g.id) === groupId);
-    set({
-      targetUserGroupId: groupId,
-      targetUserGroupName: selected?.name?.trim() ?? "",
-    });
-  }
-
-  function onSelectTaskTemplate(taskId: string, templateId: string) {
-    const template =
-      templateId === NONE
-        ? null
-        : templates.find((t) => String(t.id) === templateId);
-    set({
-      taskRewardItems: values.taskRewardItems.map((row) =>
-        row.taskId === taskId
-          ? {
-              ...row,
-              rewardTemplateId: templateId === NONE ? "" : templateId,
-              rewardTemplateName: template
-                ? template.title !== "—"
-                  ? template.title
-                  : `Template #${template.id}`
-                : "",
-            }
-          : row,
-      ),
-    });
-  }
-
-  function onSelectGroupReward(templateId: string) {
-    set({
-      taskGroupRewardTemplateId: templateId === NONE ? "" : templateId,
-    });
-  }
-
+}: Readonly<{
+  statusLabel?: string | null;
+  versionLabel?: string | null;
+}>) {
+  if (!statusLabel && !versionLabel) return null;
   return (
-    <div className="flex flex-col gap-5">
-      {(statusLabel || versionLabel) && (
-        <div className="flex flex-wrap gap-4 rounded-xl border border-white/10 bg-zinc-950/40 px-5 py-3 text-sm text-zinc-400">
-          {statusLabel ? (
-            <p>
-              Status: <span className="text-zinc-100">{statusLabel}</span>
-            </p>
-          ) : null}
-          {versionLabel ? (
-            <p>
-              Version: <span className="text-zinc-100">{versionLabel}</span>
-            </p>
-          ) : null}
-        </div>
-      )}
+    <div className="flex flex-wrap gap-4 rounded-xl border border-white/10 bg-zinc-950/40 px-5 py-3 text-sm text-zinc-400">
+      {statusLabel ? (
+        <p>
+          Status: <span className="text-zinc-100">{statusLabel}</span>
+        </p>
+      ) : null}
+      {versionLabel ? (
+        <p>
+          Version: <span className="text-zinc-100">{versionLabel}</span>
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
-      <FormSection title="Basics">
+function CampaignBasicsSection({
+  values,
+  readOnly,
+  onPatch,
+}: Readonly<{
+  values: CampaignFormValues;
+  readOnly: boolean;
+  onPatch: (next: Partial<CampaignFormValues>) => void;
+}>) {
+  return (
+    <FormSection title="Basics">
+      <label className="grid gap-1.5 text-sm">
+        <span className="text-zinc-400">Name</span>
+        {readOnly ? (
+          <p className="rounded-lg border border-white/10 bg-zinc-900/80 px-2.5 py-1.5 text-sm text-zinc-100">
+            {values.name.trim() ? values.name : "—"}
+          </p>
+        ) : (
+          <Input
+            value={values.name}
+            onChange={(e) => onPatch({ name: e.target.value })}
+            required
+            className={FIELD_CLASS}
+          />
+        )}
+      </label>
+      <label className="grid gap-1.5 text-sm">
+        <span className="text-zinc-400">Market</span>
+        {readOnly ? (
+          <p className="rounded-lg border border-white/10 bg-zinc-900/80 px-2.5 py-1.5 text-sm text-zinc-100">
+            {values.market.trim() ? values.market : "—"}
+          </p>
+        ) : (
+          <Select
+            value={values.market || undefined}
+            onValueChange={(market) => onPatch({ market })}
+          >
+            <SelectTrigger className={SELECT_TRIGGER_CLASS}>
+              <SelectValue placeholder="Select market" />
+            </SelectTrigger>
+            <SelectContent position="popper" className={SELECT_CONTENT_CLASS}>
+              {SHARED_MARKETS.map((m) => (
+                <SelectItem key={m} value={m}>
+                  {m}
+                </SelectItem>
+              ))}
+              {values.market &&
+              !(SHARED_MARKETS as readonly string[]).includes(values.market) ? (
+                <SelectItem value={values.market}>
+                  {values.market} (current)
+                </SelectItem>
+              ) : null}
+            </SelectContent>
+          </Select>
+        )}
+      </label>
+      <label className="grid gap-1.5 text-sm">
+        <span className="text-zinc-400">Time zone</span>
+        {readOnly ? (
+          <Input
+            value={values.timeZone}
+            readOnly
+            disabled
+            className={FIELD_CLASS}
+          />
+        ) : (
+          <Select
+            value={values.timeZone || TIMEZONE_OPTIONS[0].value}
+            onValueChange={(timeZone) => onPatch({ timeZone })}
+          >
+            <SelectTrigger className={SELECT_TRIGGER_CLASS}>
+              <SelectValue placeholder="Select time zone" />
+            </SelectTrigger>
+            <SelectContent position="popper" className={SELECT_CONTENT_CLASS}>
+              {TIMEZONE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </label>
+      <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-1.5 text-sm">
-          <span className="text-zinc-400">Name</span>
-          {ro ? (
-            <p className="rounded-lg border border-white/10 bg-zinc-900/80 px-2.5 py-1.5 text-sm text-zinc-100">
-              {values.name.trim() ? values.name : "—"}
-            </p>
-          ) : (
-            <Input
-              value={values.name}
-              onChange={(e) => set({ name: e.target.value })}
-              required
-              className={FIELD_CLASS}
-            />
-          )}
+          <span className="text-zinc-400">Registration start</span>
+          <Input
+            type="datetime-local"
+            value={values.registrationStartTime}
+            onChange={(e) => onPatch({ registrationStartTime: e.target.value })}
+            disabled={readOnly}
+            readOnly={readOnly}
+            className={FIELD_CLASS}
+          />
         </label>
         <label className="grid gap-1.5 text-sm">
-          <span className="text-zinc-400">Market</span>
-          {ro ? (
-            <p className="rounded-lg border border-white/10 bg-zinc-900/80 px-2.5 py-1.5 text-sm text-zinc-100">
-              {values.market.trim() ? values.market : "—"}
-            </p>
-          ) : (
-            <Select
-              value={values.market || undefined}
-              onValueChange={(market) => set({ market })}
-            >
-              <SelectTrigger className={SELECT_TRIGGER_CLASS}>
-                <SelectValue placeholder="Select market" />
-              </SelectTrigger>
-              <SelectContent position="popper" className={SELECT_CONTENT_CLASS}>
-                {SHARED_MARKETS.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {m}
-                  </SelectItem>
-                ))}
-                {values.market &&
-                !(SHARED_MARKETS as readonly string[]).includes(
-                  values.market,
-                ) ? (
-                  <SelectItem value={values.market}>
-                    {values.market} (current)
-                  </SelectItem>
-                ) : null}
-              </SelectContent>
-            </Select>
-          )}
+          <span className="text-zinc-400">Registration end</span>
+          <Input
+            type="datetime-local"
+            value={values.registrationEndTime}
+            onChange={(e) => onPatch({ registrationEndTime: e.target.value })}
+            disabled={readOnly}
+            readOnly={readOnly}
+            className={FIELD_CLASS}
+          />
         </label>
         <label className="grid gap-1.5 text-sm">
-          <span className="text-zinc-400">Time zone</span>
-          {ro ? (
-            <Input value={values.timeZone} readOnly disabled className={FIELD_CLASS} />
-          ) : (
-            <Select
-              value={values.timeZone || TIMEZONE_OPTIONS[0].value}
-              onValueChange={(timeZone) => set({ timeZone })}
-            >
-              <SelectTrigger className={SELECT_TRIGGER_CLASS}>
-                <SelectValue placeholder="Select time zone" />
-              </SelectTrigger>
-              <SelectContent position="popper" className={SELECT_CONTENT_CLASS}>
-                {TIMEZONE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          <span className="text-zinc-400">Campaign start</span>
+          <Input
+            type="datetime-local"
+            value={values.campaignStartTime}
+            onChange={(e) => onPatch({ campaignStartTime: e.target.value })}
+            disabled={readOnly}
+            readOnly={readOnly}
+            className={FIELD_CLASS}
+          />
         </label>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-1.5 text-sm">
-            <span className="text-zinc-400">Registration start</span>
-            <Input
-              type="datetime-local"
-              value={values.registrationStartTime}
-              onChange={(e) => set({ registrationStartTime: e.target.value })}
-              disabled={ro}
-              readOnly={ro}
-              className={FIELD_CLASS}
-            />
-          </label>
-          <label className="grid gap-1.5 text-sm">
-            <span className="text-zinc-400">Registration end</span>
-            <Input
-              type="datetime-local"
-              value={values.registrationEndTime}
-              onChange={(e) => set({ registrationEndTime: e.target.value })}
-              disabled={ro}
-              readOnly={ro}
-              className={FIELD_CLASS}
-            />
-          </label>
-          <label className="grid gap-1.5 text-sm">
-            <span className="text-zinc-400">Campaign start</span>
-            <Input
-              type="datetime-local"
-              value={values.campaignStartTime}
-              onChange={(e) => set({ campaignStartTime: e.target.value })}
-              disabled={ro}
-              readOnly={ro}
-              className={FIELD_CLASS}
-            />
-          </label>
-          <label className="grid gap-1.5 text-sm">
-            <span className="text-zinc-400">Campaign end</span>
-            <Input
-              type="datetime-local"
-              value={values.campaignEndTime}
-              onChange={(e) => set({ campaignEndTime: e.target.value })}
-              disabled={ro}
-              readOnly={ro}
-              className={FIELD_CLASS}
-            />
-          </label>
-        </div>
-      </FormSection>
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-zinc-400">Campaign end</span>
+          <Input
+            type="datetime-local"
+            value={values.campaignEndTime}
+            onChange={(e) => onPatch({ campaignEndTime: e.target.value })}
+            disabled={readOnly}
+            readOnly={readOnly}
+            className={FIELD_CLASS}
+          />
+        </label>
+      </div>
+    </FormSection>
+  );
+}
 
+function CampaignAssociationsSections({
+  values,
+  readOnly,
+  loadingImports,
+  userGroups,
+  landingPages,
+  projects,
+  onSelectUserGroup,
+  onSelectLandingPage,
+  onSelectBudget,
+}: Readonly<{
+  values: CampaignFormValues;
+  readOnly: boolean;
+  loadingImports: boolean;
+  userGroups: data_UserGroupListItemVO[];
+  landingPages: LandingPageDisplayRow[];
+  projects: ProjectDisplayRow[];
+  onSelectUserGroup: (groupId: string) => void;
+  onSelectLandingPage: (landingPageId: string) => void;
+  onSelectBudget: (projectId: string) => void;
+}>) {
+  return (
+    <>
       <FormSection
         title="Target user group"
         description="Select a published (ACTIVE) user group."
       >
-        {ro ? (
+        {readOnly ? (
           <p className="text-sm text-zinc-300">
             {values.targetUserGroupId
               ? `${values.targetUserGroupName || "Group"} (#${values.targetUserGroupId})`
@@ -677,7 +655,7 @@ export function CampaignDetailsForm({
         title="Landing page"
         description="Select a published landing page."
       >
-        {ro ? (
+        {readOnly ? (
           <p className="text-sm text-zinc-300">
             {values.landingPageId ? `#${values.landingPageId}` : "—"}
           </p>
@@ -709,7 +687,7 @@ export function CampaignDetailsForm({
         title="Budget"
         description="Import an ongoing reward project."
       >
-        {ro ? (
+        {readOnly ? (
           <p className="text-sm text-zinc-300">
             {values.budgetProjectId
               ? `${values.budgetProjectName || "Project"} (#${values.budgetProjectId})`
@@ -738,7 +716,137 @@ export function CampaignDetailsForm({
           </label>
         )}
       </FormSection>
+    </>
+  );
+}
 
+export function CampaignDetailsForm({
+  values,
+  readOnly,
+  onChange,
+  statusLabel,
+  versionLabel,
+}: Readonly<CampaignDetailsFormProps>) {
+  const ro = readOnly;
+  const set = (p: Partial<CampaignFormValues>) => {
+    if (!readOnly && onChange) onChange(patch(values, p));
+  };
+
+  const {
+    projects,
+    templates,
+    taskGroups,
+    landingPages,
+    userGroups,
+    importError,
+    setImportError,
+    loadingImports,
+  } = useCampaignImportLists(ro);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+
+  async function onSelectTaskGroup(taskGroupId: string) {
+    if (ro) return;
+    if (!taskGroupId || taskGroupId === NONE) {
+      set({
+        taskGroupId: "",
+        taskGroupRewardTemplateId: "",
+        taskRewardItems: [],
+      });
+      return;
+    }
+    set({ taskGroupId });
+    setLoadingTasks(true);
+    setImportError(null);
+    try {
+      const tasks = await fetchTasksByGroup(Number(taskGroupId));
+      set({
+        taskGroupId,
+        taskRewardItems: mergeTasksWithExistingRewards(
+          tasks,
+          values.taskRewardItems,
+        ),
+      });
+    } catch (e) {
+      setImportError(
+        e instanceof Error ? e.message : "Failed to load tasks for group",
+      );
+    } finally {
+      setLoadingTasks(false);
+    }
+  }
+
+  function onSelectBudget(projectId: string) {
+    if (projectId === NONE) {
+      set({ budgetProjectId: "", budgetProjectName: "" });
+      return;
+    }
+    const project = projects.find((p) => String(p.id) === projectId);
+    set({
+      budgetProjectId: projectId,
+      budgetProjectName: project?.name ?? values.budgetProjectName,
+    });
+  }
+
+  function onSelectLandingPage(landingPageId: string) {
+    set({
+      landingPageId: landingPageId === NONE ? "" : landingPageId,
+    });
+  }
+
+  function onSelectUserGroup(groupId: string) {
+    if (groupId === NONE) {
+      set({ targetUserGroupId: "", targetUserGroupName: "" });
+      return;
+    }
+    const selected = userGroups.find((g) => String(g.id) === groupId);
+    set({
+      targetUserGroupId: groupId,
+      targetUserGroupName: selected?.name?.trim() ?? "",
+    });
+  }
+
+  function onSelectTaskTemplate(taskId: string, templateId: string) {
+    let rewardTemplateName = "";
+    if (templateId !== NONE) {
+      const template = templates.find((t) => String(t.id) === templateId);
+      if (template) rewardTemplateName = templateStoredName(template);
+    }
+    set({
+      taskRewardItems: values.taskRewardItems.map((row) => {
+        if (row.taskId !== taskId) return row;
+        return {
+          ...row,
+          rewardTemplateId: templateId === NONE ? "" : templateId,
+          rewardTemplateName,
+        };
+      }),
+    });
+  }
+
+  function onSelectGroupReward(templateId: string) {
+    set({
+      taskGroupRewardTemplateId: templateId === NONE ? "" : templateId,
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <CampaignStatusBanner
+        statusLabel={statusLabel}
+        versionLabel={versionLabel}
+      />
+      <CampaignBasicsSection values={values} readOnly={ro} onPatch={set} />
+      <CampaignAssociationsSections
+        values={values}
+        readOnly={ro}
+        loadingImports={loadingImports}
+        userGroups={userGroups}
+        landingPages={landingPages}
+        projects={projects}
+        onSelectUserGroup={onSelectUserGroup}
+        onSelectLandingPage={onSelectLandingPage}
+        onSelectBudget={onSelectBudget}
+      />
       <CampaignTaskRewardsSection
         values={values}
         readOnly={ro}
