@@ -18,7 +18,7 @@ export type DynamicTemplateConfig = {
 
 export type TemplateConfigFormValues = FixTemplateConfig | DynamicTemplateConfig;
 
-/** Parsed config object before JSON-stringifying for the API. */
+/** Validated config object sent as JSON object (not stringified). */
 export type TemplateConfigBody =
   | { amount: string }
   | { base_metric: string; rate: number; cap: string };
@@ -34,13 +34,11 @@ export type TemplateCreatePayload = {
   type: TemplateType;
   unit: string;
   voucher_type: string;
-  /** JSON string per swagger `data.CreateTemplateRequest.config`. */
-  config: string;
+  config: TemplateConfigBody;
 };
 
 export type TemplateUpdatePayload = {
-  /** JSON string per swagger `data.UpdateTemplateRequest.config`. */
-  config: string;
+  config: TemplateConfigBody;
 };
 
 const NUMERIC_STRING_PATTERN = /^-?\d+(\.\d+)?$/;
@@ -191,7 +189,7 @@ export function toCreateTemplatePayload(
     type: values.type,
     unit,
     voucher_type: voucherType,
-    config: JSON.stringify(validateConfig(values.type, values.config)),
+    config: validateConfig(values.type, values.config),
   };
 }
 
@@ -200,7 +198,7 @@ export function toUpdateTemplatePayload(
   config: TemplateConfigFormValues,
 ): TemplateUpdatePayload {
   return {
-    config: JSON.stringify(validateConfig(type, config)),
+    config: validateConfig(type, config),
   };
 }
 

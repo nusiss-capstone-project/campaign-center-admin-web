@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 export type data_CreateTemplateRequest = {
-    config: string;
+    config: Record<string, any>;
     type: data_CreateTemplateRequest.type;
     unit: string;
     voucher_type: string;

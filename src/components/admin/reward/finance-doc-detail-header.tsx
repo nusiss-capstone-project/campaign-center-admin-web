@@ -14,9 +14,8 @@ type FinanceDocDetailHeaderProps = {
   showEdit: boolean;
   showSubmit: boolean;
   showApprove: boolean;
-  showWorkflow: boolean;
-  canRecordPayment: boolean;
-  canCreateIssue: boolean;
+  showRecordPayment: boolean;
+  showCreateIssue: boolean;
   onSubmitDoc: () => void;
   onApproveDoc: (status: data_ApproveFinanceDocRequest.status) => void;
   onRecordPayment: () => void;
@@ -30,9 +29,8 @@ export function FinanceDocDetailHeader({
   showEdit,
   showSubmit,
   showApprove,
-  showWorkflow,
-  canRecordPayment,
-  canCreateIssue,
+  showRecordPayment,
+  showCreateIssue,
   onSubmitDoc,
   onApproveDoc,
   onRecordPayment,
@@ -94,12 +92,12 @@ export function FinanceDocDetailHeader({
               </Button>
             </>
           ) : null}
-          {showWorkflow && canRecordPayment ? (
+          {showRecordPayment ? (
             <Button variant="outline" onClick={onRecordPayment}>
               Record disbursement
             </Button>
           ) : null}
-          {showWorkflow && canCreateIssue ? (
+          {showCreateIssue ? (
             <Button
               className="bg-white text-black hover:bg-zinc-200"
               onClick={onCreateIssue}

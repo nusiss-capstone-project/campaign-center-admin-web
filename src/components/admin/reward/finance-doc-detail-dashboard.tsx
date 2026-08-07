@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { data_FinanceDocVO } from "@/lib/reward-api/models/data_FinanceDocVO";
 import type { data_PaymentConfigVO } from "@/lib/reward-api/models/data_PaymentConfigVO";
 import { data_ApproveIssueRequestRequest } from "@/lib/reward-api/models/data_ApproveIssueRequestRequest";
+import { useAdminAccess } from "@/components/admin/admin-access-provider";
 import {
   canApproveFinanceDocStatus,
   canEditFinanceDocStatus,
@@ -54,6 +55,7 @@ export function FinanceDocDetailDashboard({
   onRefresh,
 }: Readonly<FinanceDocDetailDashboardProps>) {
   const caps = useRewardCapabilities();
+  const { role } = useAdminAccess();
   const status = doc.status ?? "UNKNOWN";
   const docId = doc.doc_id ?? "";
   const formValues = parseFinanceDocToFormValues(doc);
@@ -86,12 +88,17 @@ export function FinanceDocDetailDashboard({
   const showEdit = caps.canEditFinanceDoc && canEditFinanceDocStatus(status);
   const showSubmit =
     caps.canSubmitFinanceDoc && canSubmitFinanceDocStatus(status);
+  // Approve/Reject is finance_admin + admin only (not campaign_ops).
   const showApprove =
-    caps.canApproveFinanceDoc && canApproveFinanceDocStatus(status);
-  const showWorkflow =
-    caps.canRecordFinancePayment &&
-    caps.canCreateIssueRequest &&
-    canManageFinanceDocWorkflow(status);
+    (role === "admin" || role === "finance_admin") &&
+    caps.canApproveFinanceDoc &&
+    canApproveFinanceDocStatus(status);
+  const workflowReady = canManageFinanceDocWorkflow(status);
+  // Keep payment / issue actions independent — finance_admin can record
+  // disbursements without create-issue permission.
+  const showRecordPayment =
+    caps.canRecordFinancePayment && workflowReady;
+  const showCreateIssue = caps.canCreateIssueRequest && workflowReady;
   const showPaymentsTab = caps.canRecordFinancePayment;
 
   return (
@@ -103,9 +110,8 @@ export function FinanceDocDetailDashboard({
         showEdit={showEdit}
         showSubmit={showSubmit}
         showApprove={showApprove}
-        showWorkflow={showWorkflow}
-        canRecordPayment={caps.canRecordFinancePayment}
-        canCreateIssue={caps.canCreateIssueRequest}
+        showRecordPayment={showRecordPayment}
+        showCreateIssue={showCreateIssue}
         onSubmitDoc={() => setActiveDialog({ type: "submit-doc" })}
         onApproveDoc={(nextStatus) =>
           setActiveDialog({ type: "approve-doc", status: nextStatus })

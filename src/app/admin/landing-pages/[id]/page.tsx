@@ -102,7 +102,7 @@ export default function AdminLandingPageDetailPage() {
 
   const statusCode = pickLandingPageStatus(raw);
   const statusLabel = statusCodeToLabel(statusCode);
-  const canEdit = statusCode === 1 || statusCode === 2;
+  const canEdit = statusCode === 1;
   const error = loadError ?? localeError;
 
   function renderContent() {

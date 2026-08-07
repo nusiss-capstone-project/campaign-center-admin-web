@@ -1,11 +1,7 @@
-/** Suggested markets from campaign-api v2 TD (manual entry + datalist). */
-export const CAMPAIGN_MARKET_SUGGESTIONS = [
-  "SG",
-  "EEA",
-  "US",
-  "TR",
-  "BR",
-] as const;
+import { SHARED_MARKETS } from "@/lib/shared/markets";
+
+/** @deprecated Prefer `SHARED_MARKETS` from `@/lib/shared/markets`. */
+export const CAMPAIGN_MARKET_SUGGESTIONS = SHARED_MARKETS;
 
 export const TIMEZONE_OPTIONS = [
   { value: "UTC", label: "UTC" },

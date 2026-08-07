@@ -4,10 +4,8 @@ import { useEffect, useId, useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 
 import type { CampaignFormValues } from "@/lib/admin/campaign-form-values";
-import {
-  CAMPAIGN_MARKET_SUGGESTIONS,
-  TIMEZONE_OPTIONS,
-} from "@/lib/admin/campaign-options";
+import { TIMEZONE_OPTIONS } from "@/lib/admin/campaign-options";
+import { SHARED_MARKETS } from "@/lib/shared/markets";
 import { fetchTaskGroups, fetchTasksByGroup } from "@/lib/admin/task-admin-fetch";
 import { fetchPublishedLandingPages } from "@/lib/admin/landing-pages-fetch";
 import type { LandingPageDisplayRow } from "@/lib/admin/landing-page-row";
@@ -529,20 +527,35 @@ export function CampaignDetailsForm({
         </label>
         <label className="grid gap-1.5 text-sm">
           <span className="text-zinc-400">Market</span>
-          <Input
-            list="campaign-market-suggestions"
-            value={values.market}
-            onChange={(e) => set({ market: e.target.value })}
-            disabled={ro}
-            readOnly={ro}
-            placeholder="e.g. SG"
-            className={FIELD_CLASS}
-          />
-          <datalist id="campaign-market-suggestions">
-            {CAMPAIGN_MARKET_SUGGESTIONS.map((m) => (
-              <option key={m} value={m} />
-            ))}
-          </datalist>
+          {ro ? (
+            <p className="rounded-lg border border-white/10 bg-zinc-900/80 px-2.5 py-1.5 text-sm text-zinc-100">
+              {values.market.trim() ? values.market : "—"}
+            </p>
+          ) : (
+            <Select
+              value={values.market || undefined}
+              onValueChange={(market) => set({ market })}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_CLASS}>
+                <SelectValue placeholder="Select market" />
+              </SelectTrigger>
+              <SelectContent position="popper" className={SELECT_CONTENT_CLASS}>
+                {SHARED_MARKETS.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
+                ))}
+                {values.market &&
+                !(SHARED_MARKETS as readonly string[]).includes(
+                  values.market,
+                ) ? (
+                  <SelectItem value={values.market}>
+                    {values.market} (current)
+                  </SelectItem>
+                ) : null}
+              </SelectContent>
+            </Select>
+          )}
         </label>
         <label className="grid gap-1.5 text-sm">
           <span className="text-zinc-400">Time zone</span>
