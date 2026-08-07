@@ -8,8 +8,9 @@ import { formatYmd } from "@/lib/admin/campaign-performance-utils";
 export const USE_PERFORMANCE_MOCK = true;
 
 export function mockPerformanceSummary(
-  _campaignId: number,
+  _campaignId?: number,
 ): CampaignPerformanceSummary {
+  void _campaignId;
   return {
     participantCount: 1284,
     participationCount: 2460,
@@ -25,6 +26,7 @@ export function mockPerformanceDaily(
   startDate: string,
   endDate: string,
 ): CampaignPerformanceDailyRow[] {
+  void _campaignId;
   const start = parseYmd(startDate);
   const end = parseYmd(endDate);
   if (!start || !end || start > end) return [];

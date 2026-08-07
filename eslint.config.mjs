@@ -22,6 +22,7 @@ const eslintConfig = defineConfig([
     // OpenAPI-generated clients (also stripped of bare eslint-disable for Sonar).
     "src/lib/api/**",
     "src/lib/reward-api/**",
+    "src/lib/usergroup-api/**",
   ]),
 ]);
 
