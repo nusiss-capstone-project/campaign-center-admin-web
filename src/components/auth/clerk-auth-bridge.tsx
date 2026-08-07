@@ -8,6 +8,8 @@ import { OpenAPI } from "@/lib/api/core/OpenAPI";
 import { getCampaignCenterApiV1Base } from "@/lib/api/openapi-base-url";
 import { OpenAPI as RewardOpenAPI } from "@/lib/reward-api/core/OpenAPI";
 import { getRewardMsApiBase } from "@/lib/reward-api/reward-api-base-url";
+import { OpenAPI as UserGroupOpenAPI } from "@/lib/usergroup-api/core/OpenAPI";
+import { getUsergroupMsApiBase } from "@/lib/usergroup-api/usergroup-api-base-url";
 import { getPublicApiBaseUrl } from "@/lib/admin/campaign-admin-api";
 import {
   isTrustedApiUrl,
@@ -26,17 +28,20 @@ export function ClerkAuthBridge({ children }: { children: ReactNode }) {
       resetClerkTokenGetter();
       OpenAPI.TOKEN = undefined;
       RewardOpenAPI.TOKEN = undefined;
+      UserGroupOpenAPI.TOKEN = undefined;
       return;
     }
 
     OpenAPI.BASE = getCampaignCenterApiV1Base();
     RewardOpenAPI.BASE = getRewardMsApiBase();
+    UserGroupOpenAPI.BASE = getUsergroupMsApiBase();
     const apiBaseConfigured = getPublicApiBaseUrl() !== "";
 
     if (!isSignedIn) {
       setClerkTokenGetter(null);
       OpenAPI.TOKEN = undefined;
       RewardOpenAPI.TOKEN = undefined;
+      UserGroupOpenAPI.TOKEN = undefined;
       setReady(true);
       return;
     }
@@ -50,15 +55,23 @@ export function ClerkAuthBridge({ children }: { children: ReactNode }) {
       if (!isTrustedApiUrl(RewardOpenAPI.BASE)) return "";
       return getter();
     };
+    const userGroupOpenApiTokenGetter = async () => {
+      if (!isTrustedApiUrl(UserGroupOpenAPI.BASE)) return "";
+      return getter();
+    };
     setClerkTokenGetter(getter);
     OpenAPI.TOKEN = apiBaseConfigured ? openApiTokenGetter : undefined;
     RewardOpenAPI.TOKEN = apiBaseConfigured ? rewardOpenApiTokenGetter : undefined;
+    UserGroupOpenAPI.TOKEN = apiBaseConfigured
+      ? userGroupOpenApiTokenGetter
+      : undefined;
     setReady(true);
 
     return () => {
       setClerkTokenGetter(null);
       OpenAPI.TOKEN = undefined;
       RewardOpenAPI.TOKEN = undefined;
+      UserGroupOpenAPI.TOKEN = undefined;
     };
   }, [getToken, isLoaded, isSignedIn]);
 

@@ -10,11 +10,15 @@ import type { data_SubmitFinanceDocRequest } from "@/lib/reward-api/models/data_
 import type { data_SubmitIssueRequestRequest } from "@/lib/reward-api/models/data_SubmitIssueRequestRequest";
 import type { data_UpdateFinanceDocContentRequest } from "@/lib/reward-api/models/data_UpdateFinanceDocContentRequest";
 import type { data_UpdateIssueRequestRequest } from "@/lib/reward-api/models/data_UpdateIssueRequestRequest";
+import { AdminBudgetService } from "@/lib/reward-api/services/AdminBudgetService";
 import { AdminFinanceDocService } from "@/lib/reward-api/services/AdminFinanceDocService";
 import { AdminFinancePaymentService } from "@/lib/reward-api/services/AdminFinancePaymentService";
+import { AdminIssueRecordService } from "@/lib/reward-api/services/AdminIssueRecordService";
 import { AdminIssueRequestService } from "@/lib/reward-api/services/AdminIssueRequestService";
 import { AdminPaymentConfigService } from "@/lib/reward-api/services/AdminPaymentConfigService";
 import { AdminProjectService } from "@/lib/reward-api/services/AdminProjectService";
+import type { data_BudgetVO } from "@/lib/reward-api/models/data_BudgetVO";
+import type { data_IssueRecordVO } from "@/lib/reward-api/models/data_IssueRecordVO";
 import type { data_TemplateVO } from "@/lib/reward-api/models/data_TemplateVO";
 import { AdminTemplateService } from "@/lib/reward-api/services/AdminTemplateService";
 import type {
@@ -117,6 +121,26 @@ export async function fetchFinanceDocDetail(
 ): Promise<data_FinanceDocVO> {
   const res = await AdminFinanceDocService.getRewardMsV1AdminFinanceDocs1(docId);
   return unwrapRewardResponse(res);
+}
+
+export async function fetchProjectBudgets(
+  docId: string,
+): Promise<data_BudgetVO[]> {
+  const res =
+    await AdminBudgetService.getRewardMsV1AdminFinanceDocsProjectBudgets(docId);
+  const data = unwrapRewardResponseNullable<data_BudgetVO[]>(res);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function fetchIssueBudgets(
+  issueRequestId: number,
+): Promise<data_BudgetVO[]> {
+  const res =
+    await AdminBudgetService.getRewardMsV1AdminIssueRequestsIssueBudgets(
+      issueRequestId,
+    );
+  const data = unwrapRewardResponseNullable<data_BudgetVO[]>(res);
+  return Array.isArray(data) ? data : [];
 }
 
 export async function createFinanceDoc(
@@ -280,7 +304,6 @@ export function financeDocToDisplayRow(doc: data_FinanceDocVO): FinanceDocDispla
       projectName: doc.project?.name ?? "",
       description: doc.description ?? "",
       status: doc.status ?? "UNKNOWN",
-      creator: doc.creator ?? "—",
       createdAtLabel: "—",
       updatedAtLabel: "—",
     };
@@ -354,4 +377,17 @@ export async function publishTemplate(templateId: number): Promise<void> {
   const res =
     await AdminTemplateService.putRewardMsV1AdminTemplatesPublish(templateId);
   unwrapRewardResponse(res);
+}
+
+export async function fetchIssueRecordsByProjectUser(
+  projectId: number,
+  userId: number,
+): Promise<data_IssueRecordVO[]> {
+  const res =
+    await AdminIssueRecordService.getRewardMsV1AdminIssueRecordsProjectsUsers(
+      projectId,
+      userId,
+    );
+  const data = unwrapRewardResponseNullable<data_IssueRecordVO[]>(res);
+  return Array.isArray(data) ? data : [];
 }

@@ -18,6 +18,7 @@ const ROLE_CAPABILITY_MATRIX: Record<AdminRole, AdminCapabilities> = {
     menuDashboard: true,
     menuCampaigns: true,
     menuLandingPages: true,
+    menuUserGroups: true,
     menuTasks: true,
     menuRewards: true,
     menuRewardProjects: true,
@@ -32,6 +33,11 @@ const ROLE_CAPABILITY_MATRIX: Record<AdminRole, AdminCapabilities> = {
     canCreateLandingPage: true,
     canEditLandingPage: true,
     canPublishLandingPage: true,
+
+    canCreateUserGroup: true,
+    canEditUserGroup: true,
+    canPublishUserGroup: true,
+    canOfflineUserGroup: true,
 
     canCreateTaskGroup: true,
     canEditTaskGroup: true,

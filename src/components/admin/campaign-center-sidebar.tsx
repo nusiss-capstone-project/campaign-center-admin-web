@@ -11,6 +11,7 @@ import {
   ListTodo,
   Megaphone,
   Settings,
+  Users,
 } from "lucide-react";
 
 import { useAdminAccess } from "@/components/admin/admin-access-provider";
@@ -43,6 +44,12 @@ const NAV: NavItem[] = [
     label: "Landing Pages",
     icon: LayoutTemplate,
     visible: (c) => c.menuLandingPages,
+  },
+  {
+    href: "/admin/user-groups",
+    label: "User Groups",
+    icon: Users,
+    visible: (c) => c.menuUserGroups,
   },
   {
     href: "/admin/task-group",

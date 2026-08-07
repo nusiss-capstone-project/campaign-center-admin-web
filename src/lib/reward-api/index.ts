@@ -10,6 +10,7 @@ export type { data_ApplicationDetailItemVO } from './models/data_ApplicationDeta
 export { data_ApproveFinanceDocRequest } from './models/data_ApproveFinanceDocRequest';
 export { data_ApproveIssueRequestRequest } from './models/data_ApproveIssueRequestRequest';
 export type { data_BaseResponse } from './models/data_BaseResponse';
+export type { data_BudgetVO } from './models/data_BudgetVO';
 export type { data_CreateFinanceDocRequest } from './models/data_CreateFinanceDocRequest';
 export type { data_CreateFinanceDocResponse } from './models/data_CreateFinanceDocResponse';
 export type { data_CreateFinancePaymentRequest } from './models/data_CreateFinancePaymentRequest';
@@ -34,9 +35,12 @@ export type { data_UpdateFinanceDocResponse } from './models/data_UpdateFinanceD
 export type { data_UpdateIssueRequestRequest } from './models/data_UpdateIssueRequestRequest';
 export type { data_UpdateIssueRequestResponse } from './models/data_UpdateIssueRequestResponse';
 export type { data_UpdateTemplateRequest } from './models/data_UpdateTemplateRequest';
+export type { data_IssueRecordVO } from './models/data_IssueRecordVO';
 
+export { AdminBudgetService } from './services/AdminBudgetService';
 export { AdminFinanceDocService } from './services/AdminFinanceDocService';
 export { AdminFinancePaymentService } from './services/AdminFinancePaymentService';
+export { AdminIssueRecordService } from './services/AdminIssueRecordService';
 export { AdminIssueRequestService } from './services/AdminIssueRequestService';
 export { AdminPaymentConfigService } from './services/AdminPaymentConfigService';
 export { AdminProjectService } from './services/AdminProjectService';

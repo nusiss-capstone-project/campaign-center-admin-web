@@ -18,6 +18,7 @@ import {
   apiErrorMessage,
   defaultPerformanceDateRange,
 } from "@/lib/admin/campaign-performance-utils";
+import { USE_PERFORMANCE_MOCK } from "@/lib/admin/campaign-performance-mock";
 
 type CampaignPerformanceTabProps = {
   campaignId: number;
@@ -101,6 +102,11 @@ export function CampaignPerformanceTab({
 
   return (
     <div className="flex flex-col gap-8">
+      {USE_PERFORMANCE_MOCK ? (
+        <p className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          Performance metrics are currently using mock data.
+        </p>
+      ) : null}
       <section>
         <h2 className="mb-4 text-sm font-medium text-zinc-300">Summary</h2>
         {summaryError ? (

@@ -41,9 +41,6 @@ export function FinanceDocsDataTable({ rows }: Readonly<FinanceDocsDataTableProp
               Status
             </TableHead>
             <TableHead className="h-11 border-0 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-              Creator
-            </TableHead>
-            <TableHead className="h-11 border-0 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
               Created
             </TableHead>
             <TableHead className="h-11 border-0 px-4 text-right text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
@@ -68,9 +65,6 @@ export function FinanceDocsDataTable({ rows }: Readonly<FinanceDocsDataTableProp
                 </TableCell>
                 <TableCell className="border-0 px-4 py-4">
                   <FinanceDocStatusBadge status={row.status} />
-                </TableCell>
-                <TableCell className="border-0 px-4 py-4 text-sm text-zinc-400">
-                  {row.creator}
                 </TableCell>
                 <TableCell className="border-0 px-4 py-4 text-sm text-zinc-500">
                   {row.createdAtLabel}

@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 
+import type { data_BudgetVO } from "@/lib/reward-api/models/data_BudgetVO";
 import type { data_FinanceDocVO } from "@/lib/reward-api/models/data_FinanceDocVO";
 import type { data_PaymentConfigVO } from "@/lib/reward-api/models/data_PaymentConfigVO";
 import { data_ApproveIssueRequestRequest } from "@/lib/reward-api/models/data_ApproveIssueRequestRequest";
+import { useAdminAccess } from "@/components/admin/admin-access-provider";
 import {
   canApproveFinanceDocStatus,
   canEditFinanceDocStatus,
@@ -18,6 +20,7 @@ import type {
   IssueRequestDisplayRow,
 } from "@/lib/admin/reward/reward-row";
 import { rewardApiErrorMessage } from "@/lib/admin/reward/reward-utils";
+import { BudgetLoadState } from "@/components/admin/reward/budget-available-total";
 import { FinanceDocForm } from "@/components/admin/reward/finance-doc-form";
 import {
   FinanceDocDetailDialogs,
@@ -30,6 +33,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type FinanceDocDetailDashboardProps = {
   doc: data_FinanceDocVO;
+  projectBudgets: data_BudgetVO[];
+  loadingProjectBudgets: boolean;
+  errorProjectBudgets: string | null;
   payments: FinancePaymentDisplayRow[];
   issueRequests: IssueRequestDisplayRow[];
   issueRequestsTotal: number;
@@ -43,6 +49,9 @@ type FinanceDocDetailDashboardProps = {
 
 export function FinanceDocDetailDashboard({
   doc,
+  projectBudgets,
+  loadingProjectBudgets,
+  errorProjectBudgets,
   payments,
   issueRequests,
   issueRequestsTotal,
@@ -54,6 +63,7 @@ export function FinanceDocDetailDashboard({
   onRefresh,
 }: Readonly<FinanceDocDetailDashboardProps>) {
   const caps = useRewardCapabilities();
+  const { role } = useAdminAccess();
   const status = doc.status ?? "UNKNOWN";
   const docId = doc.doc_id ?? "";
   const formValues = parseFinanceDocToFormValues(doc);
@@ -86,12 +96,17 @@ export function FinanceDocDetailDashboard({
   const showEdit = caps.canEditFinanceDoc && canEditFinanceDocStatus(status);
   const showSubmit =
     caps.canSubmitFinanceDoc && canSubmitFinanceDocStatus(status);
+  // Approve/Reject is finance_admin + admin only (not campaign_ops).
   const showApprove =
-    caps.canApproveFinanceDoc && canApproveFinanceDocStatus(status);
-  const showWorkflow =
-    caps.canRecordFinancePayment &&
-    caps.canCreateIssueRequest &&
-    canManageFinanceDocWorkflow(status);
+    (role === "admin" || role === "finance_admin") &&
+    caps.canApproveFinanceDoc &&
+    canApproveFinanceDocStatus(status);
+  const workflowReady = canManageFinanceDocWorkflow(status);
+  // Keep payment / issue actions independent — finance_admin can record
+  // disbursements without create-issue permission.
+  const showRecordPayment =
+    caps.canRecordFinancePayment && workflowReady;
+  const showCreateIssue = caps.canCreateIssueRequest && workflowReady;
   const showPaymentsTab = caps.canRecordFinancePayment;
 
   return (
@@ -103,9 +118,8 @@ export function FinanceDocDetailDashboard({
         showEdit={showEdit}
         showSubmit={showSubmit}
         showApprove={showApprove}
-        showWorkflow={showWorkflow}
-        canRecordPayment={caps.canRecordFinancePayment}
-        canCreateIssue={caps.canCreateIssueRequest}
+        showRecordPayment={showRecordPayment}
+        showCreateIssue={showCreateIssue}
         onSubmitDoc={() => setActiveDialog({ type: "submit-doc" })}
         onApproveDoc={(nextStatus) =>
           setActiveDialog({ type: "approve-doc", status: nextStatus })
@@ -126,26 +140,37 @@ export function FinanceDocDetailDashboard({
 
           <TabsContent value="overview" className="mt-6">
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-xl border border-white/10 bg-zinc-900/40 p-5">
-                <h2 className="text-sm font-medium text-zinc-200">Metadata</h2>
-                <dl className="mt-4 grid gap-3 text-sm">
-                  <div className="grid grid-cols-[120px_1fr] gap-2">
-                    <dt className="text-zinc-500">Creator</dt>
-                    <dd className="text-zinc-300">{doc.creator ?? "—"}</dd>
+              <div className="flex flex-col gap-6">
+                <div className="rounded-xl border border-white/10 bg-zinc-900/40 p-5">
+                  <h2 className="text-sm font-medium text-zinc-200">Metadata</h2>
+                  <dl className="mt-4 grid gap-3 text-sm">
+                    <div className="grid grid-cols-[120px_1fr] gap-2">
+                      <dt className="text-zinc-500">Remark</dt>
+                      <dd className="text-zinc-300">{doc.remark ?? "—"}</dd>
+                    </div>
+                    <div className="grid grid-cols-[120px_1fr] gap-2">
+                      <dt className="text-zinc-500">Created</dt>
+                      <dd className="text-zinc-300">{doc.created_at ?? "—"}</dd>
+                    </div>
+                    <div className="grid grid-cols-[120px_1fr] gap-2">
+                      <dt className="text-zinc-500">Updated</dt>
+                      <dd className="text-zinc-300">{doc.updated_at ?? "—"}</dd>
+                    </div>
+                  </dl>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-zinc-900/40 p-5">
+                  <h2 className="text-sm font-medium text-zinc-200">
+                    Project budget
+                  </h2>
+                  <div className="mt-4">
+                    <BudgetLoadState
+                      loading={loadingProjectBudgets}
+                      error={errorProjectBudgets}
+                      budgets={projectBudgets}
+                      showUnit
+                    />
                   </div>
-                  <div className="grid grid-cols-[120px_1fr] gap-2">
-                    <dt className="text-zinc-500">Remark</dt>
-                    <dd className="text-zinc-300">{doc.remark ?? "—"}</dd>
-                  </div>
-                  <div className="grid grid-cols-[120px_1fr] gap-2">
-                    <dt className="text-zinc-500">Created</dt>
-                    <dd className="text-zinc-300">{doc.created_at ?? "—"}</dd>
-                  </div>
-                  <div className="grid grid-cols-[120px_1fr] gap-2">
-                    <dt className="text-zinc-500">Updated</dt>
-                    <dd className="text-zinc-300">{doc.updated_at ?? "—"}</dd>
-                  </div>
-                </dl>
+                </div>
               </div>
               <div className="rounded-xl border border-white/10 bg-zinc-900/40 p-5">
                 <h2 className="text-sm font-medium text-zinc-200">

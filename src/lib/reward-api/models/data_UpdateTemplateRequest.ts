@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 export type data_UpdateTemplateRequest = {
-    config: string;
+    config: Record<string, any>;
+    title?: string;
 };
 

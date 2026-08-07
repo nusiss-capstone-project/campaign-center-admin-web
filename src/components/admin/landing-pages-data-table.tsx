@@ -117,7 +117,8 @@ export function LandingPagesDataTable({
                       <Eye className="size-4" strokeWidth={1.75} />
                     </Link>
                   </Button>
-                  {caps.canEditLandingPage ? (
+                  {caps.canEditLandingPage &&
+                  row.statusCategory === "draft" ? (
                     <Button
                       variant="ghost"
                       size="icon-sm"

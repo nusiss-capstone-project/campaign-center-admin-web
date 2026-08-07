@@ -95,7 +95,7 @@ export function AdminAccessProvider({
   }, [isSignedIn, loading, user, pathname, router]);
 
   const value = useMemo<AdminAccessValue>(() => {
-    const caps = capabilitiesForRole(user?.roleRaw ?? user?.role);
+    const caps = capabilitiesForRole(user?.role ?? user?.roleRaw);
     return {
       user,
       role: user?.role ?? null,

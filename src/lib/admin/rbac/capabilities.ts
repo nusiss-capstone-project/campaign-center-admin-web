@@ -7,6 +7,7 @@ export type AdminCapabilities = {
   menuDashboard: boolean;
   menuCampaigns: boolean;
   menuLandingPages: boolean;
+  menuUserGroups: boolean;
   menuTasks: boolean;
   menuRewards: boolean;
   menuRewardProjects: boolean;
@@ -21,6 +22,12 @@ export type AdminCapabilities = {
   canCreateLandingPage: boolean;
   canEditLandingPage: boolean;
   canPublishLandingPage: boolean;
+
+  // —— User groups ——
+  canCreateUserGroup: boolean;
+  canEditUserGroup: boolean;
+  canPublishUserGroup: boolean;
+  canOfflineUserGroup: boolean;
 
   // —— Task ——
   canCreateTaskGroup: boolean;
@@ -73,6 +80,7 @@ export const DENY_ALL_CAPABILITIES: AdminCapabilities = {
   menuDashboard: false,
   menuCampaigns: false,
   menuLandingPages: false,
+  menuUserGroups: false,
   menuTasks: false,
   menuRewards: false,
   menuRewardProjects: false,
@@ -85,6 +93,10 @@ export const DENY_ALL_CAPABILITIES: AdminCapabilities = {
   canCreateLandingPage: false,
   canEditLandingPage: false,
   canPublishLandingPage: false,
+  canCreateUserGroup: false,
+  canEditUserGroup: false,
+  canPublishUserGroup: false,
+  canOfflineUserGroup: false,
   canCreateTaskGroup: false,
   canEditTaskGroup: false,
   canPublishTaskGroup: false,
@@ -113,6 +125,7 @@ export const ALLOW_ALL_CAPABILITIES: AdminCapabilities = {
   menuDashboard: true,
   menuCampaigns: true,
   menuLandingPages: true,
+  menuUserGroups: true,
   menuTasks: true,
   menuRewards: true,
   menuRewardProjects: true,
@@ -125,6 +138,10 @@ export const ALLOW_ALL_CAPABILITIES: AdminCapabilities = {
   canCreateLandingPage: true,
   canEditLandingPage: true,
   canPublishLandingPage: true,
+  canCreateUserGroup: true,
+  canEditUserGroup: true,
+  canPublishUserGroup: true,
+  canOfflineUserGroup: true,
   canCreateTaskGroup: true,
   canEditTaskGroup: true,
   canPublishTaskGroup: true,

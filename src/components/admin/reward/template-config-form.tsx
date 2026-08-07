@@ -113,6 +113,16 @@ export function TemplateConfigForm({
 
   return (
     <div className="flex flex-col gap-5">
+      <label className="grid gap-1.5 text-sm">
+        <span className="text-zinc-400">Title</span>
+        <Input
+          value={values.title}
+          onChange={(e) => onChange({ ...values, title: e.target.value })}
+          readOnly={readOnly}
+          placeholder="e.g. Welcome Bonus"
+        />
+      </label>
+
       {!configOnly ? (
         <>
           <label className="grid gap-1.5 text-sm">

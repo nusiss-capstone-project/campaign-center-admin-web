@@ -84,7 +84,7 @@ export default function AdminLandingPageEditPage() {
         const data = await fetchLandingPageDetail(landingPageId);
         if (cancelled) return;
         const code = pickLandingPageStatus(data);
-        if (code === 3) {
+        if (code !== 1) {
           router.replace(`/admin/landing-pages/${landingPageId}`);
           return;
         }
@@ -94,10 +94,6 @@ export default function AdminLandingPageEditPage() {
           setDefaultLang,
           setSelectedLang,
         });
-        if (code !== 1 && code !== 2) {
-          setLoadError("Only draft or published landing pages can be edited.");
-          return;
-        }
         const langs = await fetchLandingPageTranslatedLangs(landingPageId);
         if (cancelled) return;
         setTranslatedLangs(langs);
@@ -139,7 +135,7 @@ export default function AdminLandingPageEditPage() {
 
   const statusCode = pickLandingPageStatus(raw);
   const statusLabel = statusCodeToLabel(statusCode);
-  const canSubmit = statusCode === 1 || statusCode === 2;
+  const canSubmit = statusCode === 1;
   const editingDefault = selectedLang === defaultLang;
   const error = loadError ?? localeError;
 

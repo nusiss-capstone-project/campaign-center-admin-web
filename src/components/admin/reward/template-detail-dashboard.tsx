@@ -69,13 +69,13 @@ export function TemplateDetailDashboard({
             </Link>
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-semibold tracking-tight text-white">
-                Template #{templateId}
+                {template.title?.trim() || `Template #${templateId}`}
               </h1>
               <TemplateStatusBadge status={status} />
             </div>
             <p className="mt-1 text-sm text-zinc-500">
-              {type === "FIXED" ? "Fixed" : "Dynamic"} · {template.voucher_type ?? "—"} ·{" "}
-              {template.unit ?? "—"}
+              #{templateId} · {type === "FIXED" ? "Fixed" : "Dynamic"} ·{" "}
+              {template.voucher_type ?? "—"} · {template.unit ?? "—"}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -113,6 +113,10 @@ export function TemplateDetailDashboard({
           <div className="rounded-xl border border-white/10 bg-zinc-900/40 p-5">
             <h2 className="text-sm font-medium text-zinc-200">Overview</h2>
             <dl className="mt-4 grid gap-3 text-sm">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
+                <dt className="text-zinc-500">Title</dt>
+                <dd className="text-zinc-300">{template.title?.trim() || "—"}</dd>
+              </div>
               <div className="grid grid-cols-[120px_1fr] gap-2">
                 <dt className="text-zinc-500">Type</dt>
                 <dd className="text-zinc-300">

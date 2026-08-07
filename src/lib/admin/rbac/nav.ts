@@ -8,6 +8,7 @@ import {
   Megaphone,
   Settings,
   Shapes,
+  Users,
 } from "lucide-react";
 
 import type { AdminCapabilities } from "@/lib/admin/rbac/capabilities";
@@ -35,6 +36,13 @@ export const ADMIN_PRIMARY_NAV: AdminNavItem[] = [
     description: "Manage landing page content and locales.",
     icon: LayoutTemplate,
     visible: (c) => c.menuLandingPages,
+  },
+  {
+    href: "/admin/user-groups",
+    label: "User Groups",
+    description: "Define audience rule groups.",
+    icon: Users,
+    visible: (c) => c.menuUserGroups,
   },
   {
     href: "/admin/task-group",

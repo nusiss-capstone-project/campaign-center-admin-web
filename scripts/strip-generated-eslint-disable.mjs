@@ -18,6 +18,7 @@ function walk(dir) {
 const targets = [
   join(root, "src/lib/api"),
   join(root, "src/lib/reward-api"),
+  join(root, "src/lib/usergroup-api"),
 ];
 
 let changed = 0;

@@ -27,7 +27,6 @@ export type FinanceDocDisplayRow = {
   projectName: string;
   description: string;
   status: string;
-  creator: string;
   createdAtLabel: string;
   updatedAtLabel: string;
 };
@@ -56,7 +55,6 @@ export type IssueRequestDisplayRow = {
   voucherType: string;
   expenseType: string;
   requestStatus: string;
-  creator: string;
   remark: string;
   createdAtLabel: string;
   updatedAtLabel: string;
@@ -64,6 +62,7 @@ export type IssueRequestDisplayRow = {
 
 export type TemplateDisplayRow = {
   id: number;
+  title: string;
   type: TemplateType;
   typeLabel: string;
   unit: string;
@@ -114,7 +113,6 @@ export function normalizeFinanceDocRow(
     projectName,
     description: pickStr(row, "description"),
     status: pickStr(row, "status") || "UNKNOWN",
-    creator: pickStr(row, "creator") || "—",
     createdAtLabel: formatRewardTimestamp(row.created_at ?? row.createdAt),
     updatedAtLabel: formatRewardTimestamp(row.updated_at ?? row.updatedAt),
   };
@@ -195,7 +193,6 @@ export function normalizeIssueRequestRow(
     voucherType: pickStr(row, "voucher_type", "voucherType") || "—",
     expenseType: pickStr(row, "expense_type", "expenseType") || "—",
     requestStatus: pickStr(row, "request_status", "requestStatus") || "UNKNOWN",
-    creator: pickStr(row, "creator") || "—",
     remark: pickStr(row, "remark"),
     createdAtLabel: formatRewardTimestamp(row.created_at ?? row.createdAt),
     updatedAtLabel: formatRewardTimestamp(row.updated_at ?? row.updatedAt),
@@ -223,6 +220,7 @@ export function normalizeTemplateRow(
   const config = row.config;
   return {
     id,
+    title: pickStr(row, "title") || "—",
     type,
     typeLabel: templateTypeLabel(type),
     unit: pickStr(row, "unit") || "—",

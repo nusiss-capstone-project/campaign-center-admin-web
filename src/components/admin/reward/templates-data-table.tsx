@@ -35,6 +35,9 @@ export function TemplatesDataTable({ rows }: Readonly<TemplatesDataTableProps>) 
               ID
             </TableHead>
             <TableHead className="h-11 border-0 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+              Title
+            </TableHead>
+            <TableHead className="h-11 border-0 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
               Type
             </TableHead>
             <TableHead className="h-11 border-0 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
@@ -62,6 +65,9 @@ export function TemplatesDataTable({ rows }: Readonly<TemplatesDataTableProps>) 
               <TableRow key={row.id} className="border-0 hover:bg-white/[0.03]">
                 <TableCell className="border-0 px-4 py-4 font-mono text-sm text-zinc-300">
                   {row.id}
+                </TableCell>
+                <TableCell className="border-0 px-4 py-4 text-sm text-white">
+                  {row.title}
                 </TableCell>
                 <TableCell className="border-0 px-4 py-4 text-sm text-zinc-300">
                   {row.typeLabel}
